@@ -1,0 +1,22 @@
+{
+  "action_name": {
+    "type": "text",
+    "value": "bank_system"
+  },
+  "manage_groups": {
+    "type": "groupselect",
+    "value": 4
+  },
+  "per_page": {
+    "type": "numeric",
+    "value": 10
+  },
+  "menu_order": {
+    "type": "numeric",
+    "value": 190
+  },
+  "home_transactions": {
+    "type": "numeric",
+    "value": 5
+  }
+}
