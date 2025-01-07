@@ -124,6 +124,14 @@ Below you can find a description of the plugin settings.
 
 ### Main Settings
 
+- **Action Page Name** `text`
+    - _Select the action input name to use for this feature._
+- **Manage Groups** `select`
+    - _Select the groups that can manage the signature market._
+- **Pagination Per Page Items** `numeric`
+    - _Number of items to display per page in the signature market._
+- **Menu Order** `numeric`
+    - _Order in the Newpoints menu item._
 - **Home Transactions** `numeric`
     - _Set how many last transactions to show in the Newpoints home page._
 
