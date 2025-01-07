@@ -78,10 +78,25 @@ const TABLES_DATA = [
             'unsigned' => true,
             'default' => 0
         ],
+        'investment_type' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'investment_stamp' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'investment_execution_stamp' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
         'transaction_status' => [
             'type' => 'SMALLINT',
             'unsigned' => true,
-            'default' => 0
+            'default' => 1
         ],
         'complete_status' => [
             'type' => 'SMALLINT',
@@ -100,7 +115,15 @@ const FIELDS_DATA = [
             'default' => 0,
             'formType' => 'numericField',
             'formOptions' => [
-                'min' => '',
+                'step' => 0.01,
+            ]
+        ],
+        'newpoints_bank_investment' => [
+            'type' => 'DECIMAL',
+            'size' => '16,2',
+            'default' => 0,
+            'formType' => 'numericField',
+            'formOptions' => [
                 'step' => 0.01,
             ]
         ],
@@ -116,6 +139,12 @@ const FIELDS_DATA = [
             'type' => 'TINYINT',
             'unsigned' => true,
             'default' => 1,
+            'formType' => 'checkBox'
+        ],
+        'newpoints_bank_system_can_invest' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
             'formType' => 'checkBox'
         ],
         'newpoints_bank_system_can_withdraw' => [
@@ -146,7 +175,7 @@ const FIELDS_DATA = [
                 'step' => 0.01,
             ]
         ],
-        'newpoints_rate_bank_system_deposit' => [
+        'newpoints_bank_system_deposit' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
             'size' => '16,2',
@@ -157,7 +186,7 @@ const FIELDS_DATA = [
                 'step' => 0.01,
             ]
         ],
-        'newpoints_rate_bank_system_withdraw' => [
+        'newpoints_bank_system_withdraw' => [
             'type' => 'INT',
             'unsigned' => true,
             'default' => 1,
@@ -167,7 +196,7 @@ const FIELDS_DATA = [
                 'step' => 0.01,
             ]
         ],
-        'newpoints_rate_bank_system_interest' => [
+        'newpoints_bank_system_interest' => [
             'type' => 'INT',
             'unsigned' => true,
             'default' => 1,
@@ -176,20 +205,20 @@ const FIELDS_DATA = [
                 'max' => 100,
             ]
         ],
-        'newpoints_rate_bank_system_interest_period' => [
+        'newpoints_bank_system_interest_period' => [
             'type' => 'INT',
             'unsigned' => true,
             'default' => 1,
             'formType' => 'numericField'
         ],
-        'newpoints_rate_bank_system_interest_period_type' => [
+        'newpoints_bank_system_interest_period_type' => [
             'type' => 'TINYINT',
             'unsigned' => true,
             'default' => 0,
             'formType' => 'selectField',
             'formFunction' => '\Newpoints\BankSystem\Admin\options_list_interest_period_type'
         ],
-        'newpoints_rate_bank_system_interest_limit' => [
+        'newpoints_bank_system_interest_limit' => [
             'type' => 'DECIMAL',
             'size' => '16,2',
             'default' => 0,

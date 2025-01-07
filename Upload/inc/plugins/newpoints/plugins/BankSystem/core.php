@@ -30,15 +30,26 @@ declare(strict_types=1);
 
 namespace Newpoints\BankSystem\Core;
 
+use function Newpoints\Core\log_add;
+use function Newpoints\Core\points_add_simple;
+use function Newpoints\Core\points_subtract;
 use function Newpoints\Core\users_get_group_permissions;
 
 use const Newpoints\BankSystem\ROOT;
+use const Newpoints\Core\LOGGING_TYPE_CHARGE;
+use const Newpoints\Core\LOGGING_TYPE_INCOME;
 
 const TRANSACTION_TYPE_DEPOSIT = 1;
 
 const TRANSACTION_TYPE_WITHDRAW = 2;
 
+const TRANSACTION_TYPE_INVESTMENT = 3;
+
 const TRANSACTION_TYPE_INTEREST = 3;
+
+const TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING = 0;
+
+const TRANSACTION_INVESTMENT_TYPE_RECURRING = 1;
 
 const TRANSACTION_STATUS_LIVE = 1;
 
@@ -63,6 +74,256 @@ function templates_get(string $template_name = '', bool $enable_html_comments = 
 
 function execute_task(): bool
 {
+    global $db;
+
+    $complete_status_new = TRANSACTION_COMPLETE_STATUS_NEW;
+
+    $complete_status_processed = TRANSACTION_COMPLETE_STATUS_PROCESSED;
+
+    $complete_status_logged = TRANSACTION_COMPLETE_STATUS_LOGGED;
+
+    $transaction_status_live = TRANSACTION_STATUS_LIVE;
+
+    $transaction_status_cancelled = TRANSACTION_STATUS_CANCELLED;
+
+    $transaction_status_no_funds = TRANSACTION_STATUS_NO_FUNDS;
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        'transaction_id, user_id, transaction_type, transaction_points, investment_stamp, complete_status',
+        "complete_status IN ('{$complete_status_new}', '{$complete_status_processed}') AND transaction_status='{$transaction_status_live}'",
+        ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]
+    );
+
+    while ($transaction_data = $db->fetch_array($query)) {
+        $transaction_id = (int)$transaction_data['transaction_id'];
+
+        $user_id = (int)$transaction_data['user_id'];
+
+        $user_data = get_user($user_id);
+
+        $transaction_type = (int)$transaction_data['transaction_type'];
+
+        $complete_status = (int)$transaction_data['complete_status'];
+
+        $transaction_points = (float)$transaction_data['transaction_points'];
+
+        if ($complete_status === $complete_status_new) {
+            if ($transaction_type === TRANSACTION_TYPE_DEPOSIT) {
+                if ($user_data['newpoints'] >= $transaction_points) {
+                    points_subtract($user_id, $transaction_points);
+
+                    transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
+
+                    $complete_status = $complete_status_processed;
+                } else {
+                    transaction_update(['transaction_status' => $transaction_status_no_funds], $transaction_id);
+                }
+            } elseif ($transaction_type === TRANSACTION_TYPE_INVESTMENT) {
+                if ($user_data['newpoints'] >= $transaction_points) {
+                    points_subtract($user_id, $transaction_points);
+
+                    transaction_update([
+                        'complete_status' => $complete_status_processed,
+                        'investment_stamp' => TIME_NOW,
+                        'investment_execution_stamp' => TIME_NOW
+                    ], $transaction_id);
+
+                    $complete_status = $complete_status_processed;
+                } else {
+                    transaction_update(['transaction_status' => $transaction_status_no_funds], $transaction_id);
+                }
+            } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
+                if ($user_data['newpoints_bank'] >= $transaction_points) {
+                    points_add_simple($user_id, $transaction_points);
+
+                    transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
+
+                    $complete_status = $complete_status_processed;
+                } else {
+                    transaction_update(['transaction_status' => $transaction_status_no_funds], $transaction_id);
+                }
+            }
+        }
+
+        if ($complete_status === $complete_status_processed) {
+            if ($transaction_type === TRANSACTION_TYPE_DEPOSIT) {
+                log_add(
+                    'bank_system_deposit',
+                    '',
+                    $user_data['username'] ?? '',
+                    $user_id,
+                    $transaction_points,
+                    $transaction_id,
+                    0,
+                    0,
+                    LOGGING_TYPE_CHARGE
+                );
+
+                transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
+            } elseif ($transaction_type === TRANSACTION_TYPE_INVESTMENT) {
+                log_add(
+                    'bank_system_investment',
+                    '',
+                    $user_data['username'] ?? '',
+                    $user_id,
+                    $transaction_points,
+                    $transaction_id,
+                    0,
+                    0,
+                    LOGGING_TYPE_CHARGE
+                );
+
+                transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
+            } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
+                log_add(
+                    'bank_system_withdraw',
+                    '',
+                    $user_data['username'] ?? '',
+                    $user_id,
+                    $transaction_points,
+                    $transaction_id,
+                    0,
+                    0,
+                    LOGGING_TYPE_INCOME
+                );
+
+                transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
+            }
+        }
+
+        user_rebuild_bank_details($user_id);
+    }
+
+    $transaction_type_investment = TRANSACTION_TYPE_INVESTMENT;
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        'transaction_id, user_id, transaction_points, investment_type, investment_stamp',
+        "transaction_type='{$transaction_type_investment}' AND complete_status='{$complete_status_logged}' AND transaction_status='{$transaction_status_live}'",
+        ['order_by' => 'investment_execution_stamp', 'order_dir' => 'asc', 'limit' => 10]
+    );
+
+    $update_data = ['investment_execution_stamp' => TIME_NOW];
+
+    while ($transaction_data = $db->fetch_array($query)) {
+        $transaction_id = (int)$transaction_data['transaction_id'];
+
+        $user_id = (int)$transaction_data['user_id'];
+
+        $user_group_permissions = users_get_group_permissions($user_id);
+
+        if (empty($user_group_permissions['newpoints_bank_system_can_invest'])) {
+            transaction_update($update_data, $transaction_id);
+
+            continue;
+        }
+
+        $transaction_points = (float)$transaction_data['transaction_points'];
+
+        $interest_rate = (float)$user_group_permissions['newpoints_bank_system_interest'];
+
+        $interest_period = (float)$user_group_permissions['newpoints_bank_system_interest_period'];
+
+        if (empty($interest_rate) || empty($interest_period)) {
+            transaction_update($update_data, $transaction_id);
+
+            continue;
+        }
+
+        switch ($user_group_permissions['newpoints_bank_system_interest_period_type']) {
+            case INTEREST_PERIOD_TYPE_DAY:
+                $interest_period_time = TIME_NOW - (int)(86400 * $interest_period);
+                break;
+            default:
+                $interest_period_time = TIME_NOW - (int)(86400 * 7 * $interest_period);
+                break;
+        }
+
+        $interest_points = $transaction_points * $interest_rate / 100;
+
+        $interest_limit = (float)$user_group_permissions['newpoints_bank_system_interest_limit'];
+
+        if (!empty($interest_limit) && $interest_points > $interest_limit) {
+            $interest_points = $interest_limit;
+        }
+
+        if (!empty($interest_points) && $transaction_data['investment_stamp'] < $interest_period_time) {
+            $user_data = get_user($user_id);
+
+            points_add_simple($user_id, $interest_points);
+
+            log_add(
+                'bank_system_interest_profit',
+                '',
+                $user_data['username'] ?? '',
+                $user_id,
+                $interest_points,
+                $transaction_id,
+                0,
+                0,
+                LOGGING_TYPE_INCOME
+            );
+
+            $update_data['investment_stamp'] = TIME_NOW;
+
+            if ((int)$transaction_data['investment_type'] !== TRANSACTION_INVESTMENT_TYPE_RECURRING) {
+                $update_data['transaction_status'] = $transaction_status_cancelled;
+
+                $update_data['complete_status'] = $complete_status_new;
+            }
+        }
+
+        transaction_update($update_data, $transaction_id);
+
+        user_rebuild_bank_details($user_id);
+    }
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        'transaction_id, user_id, transaction_type, transaction_points, investment_stamp, complete_status',
+        "transaction_type='{$transaction_type_investment}' AND complete_status IN ('{$complete_status_new}', '{$complete_status_processed}') AND transaction_status='{$transaction_status_cancelled}'",
+        ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]
+    );
+
+    while ($transaction_data = $db->fetch_array($query)) {
+        $transaction_id = (int)$transaction_data['transaction_id'];
+
+        $user_id = (int)$transaction_data['user_id'];
+
+        $user_data = get_user($user_id);
+
+        $complete_status = (int)$transaction_data['complete_status'];
+
+        $transaction_points = (float)$transaction_data['transaction_points'];
+
+        if ($complete_status === $complete_status_new) {
+            points_add_simple($user_id, $transaction_points);
+
+            transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
+
+            $complete_status = $complete_status_processed;
+        }
+
+        if ($complete_status === $complete_status_processed) {
+            log_add(
+                'bank_system_investment_cancel',
+                '',
+                $user_data['username'] ?? '',
+                $user_id,
+                $transaction_points,
+                $transaction_id,
+                0,
+                0,
+                LOGGING_TYPE_INCOME
+            );
+
+            transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
+        }
+
+        user_rebuild_bank_details($user_id);
+    }
+
     return true;
 }
 
@@ -79,6 +340,76 @@ function user_get_balance(int $user_id): float
     return (float)$db->fetch_field($query, 'newpoints_bank');
 }
 
+function user_update(int $user_id, array $update_data): int
+{
+    global $db;
+
+    return (int)$db->update_query(
+        'users',
+        $update_data,
+        "uid='{$user_id}'",
+        1
+    );
+}
+
+function user_rebuild_bank_details(int $user_id): bool
+{
+    global $db;
+
+    $transaction_type_deposit = TRANSACTION_TYPE_DEPOSIT;
+
+    $transaction_type_investment = TRANSACTION_TYPE_INVESTMENT;
+
+    $transaction_type_withdraw = TRANSACTION_TYPE_WITHDRAW;
+
+    $transaction_status_live = TRANSACTION_STATUS_LIVE;
+
+    $complete_status_logged = TRANSACTION_COMPLETE_STATUS_LOGGED;
+
+    $where_clauses = [
+        "user_id='{$user_id}'",
+        "transaction_status='{$transaction_status_live}'",
+        "complete_status='{$complete_status_logged}'",
+        'transaction_type' => "transaction_type='{$transaction_type_deposit}'"
+    ];
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        'SUM(transaction_points) AS total_deposit_points',
+        implode(' AND ', $where_clauses)
+    );
+
+    $total_deposit_points = (float)$db->fetch_field($query, 'total_deposit_points');
+
+    $where_clauses['transaction_type'] = "transaction_type='{$transaction_type_investment}'";
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        'SUM(transaction_points) AS total_investment_points',
+        implode(' AND ', $where_clauses)
+    );
+
+    $total_investment_points = (float)$db->fetch_field($query, 'total_investment_points');
+
+    $where_clauses['transaction_type'] = "transaction_type='{$transaction_type_withdraw}'";
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        'SUM(transaction_points) AS total_withdraw_points',
+        implode(' AND ', $where_clauses)
+    );
+
+    $total_withdraw_points = (float)$db->fetch_field($query, 'total_withdraw_points');
+
+
+    user_update($user_id, [
+        'newpoints_bank' => $total_deposit_points - $total_withdraw_points,
+        'newpoints_bank_investment' => $total_investment_points
+    ]);
+
+    return true;
+}
+
 function can_manage(): bool
 {
     return false;
@@ -90,6 +421,13 @@ function can_create_transaction(int $user_id): bool
 
     return !empty($user_group_permissions['newpoints_bank_system_can_deposit']) ||
         !empty($user_group_permissions['newpoints_bank_system_can_withdraw']);
+}
+
+function can_create_investment(int $user_id): bool
+{
+    $user_group_permissions = users_get_group_permissions($user_id);
+
+    return !empty($user_group_permissions['newpoints_bank_system_can_invest']);
 }
 
 function transaction_insert(array $transaction_data, bool $is_update = false, int $transaction_id = 0): int
@@ -116,6 +454,10 @@ function transaction_insert(array $transaction_data, bool $is_update = false, in
         $insert_data['transaction_stamp'] = TIME_NOW;
     }
 
+    if (isset($transaction_data['investment_stamp'])) {
+        $insert_data['investment_stamp'] = (int)$transaction_data['investment_stamp'];
+    }
+
     if (isset($transaction_data['transaction_status'])) {
         $insert_data['transaction_status'] = (int)$transaction_data['transaction_status'];
     }
@@ -124,5 +466,34 @@ function transaction_insert(array $transaction_data, bool $is_update = false, in
         $insert_data['complete_status'] = (int)$transaction_data['complete_status'];
     }
 
-    return (int)$db->insert_query('newpoints_bank_system_transactions', $insert_data);
+    if ($is_update) {
+        $db->update_query(
+            'newpoints_bank_system_transactions',
+            $transaction_data,
+            "transaction_id='{$transaction_id}'"
+        );
+
+        return $transaction_id;
+    } else {
+        return (int)$db->insert_query('newpoints_bank_system_transactions', $insert_data);
+    }
+}
+
+function transaction_update(array $transaction_data, int $transaction_id): int
+{
+    return transaction_insert($transaction_data, true, $transaction_id);
+}
+
+function transaction_get(array $where_clauses): array
+{
+    global $db;
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        '*',
+        implode(' AND ', $where_clauses),
+        ['limit' => 1]
+    );
+
+    return (array)$db->fetch_array($query);
 }

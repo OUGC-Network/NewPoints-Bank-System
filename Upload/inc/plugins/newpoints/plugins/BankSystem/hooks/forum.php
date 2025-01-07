@@ -32,10 +32,13 @@ namespace Newpoints\BankSystem\Hooks\Forum;
 
 use MyBB;
 
+use function Newpoints\BankSystem\Core\can_create_investment;
 use function Newpoints\BankSystem\Core\can_create_transaction;
 use function Newpoints\BankSystem\Core\can_manage;
 use function Newpoints\BankSystem\Core\execute_task;
+use function Newpoints\BankSystem\Core\transaction_get;
 use function Newpoints\BankSystem\Core\transaction_insert;
+use function Newpoints\BankSystem\Core\transaction_update;
 use function Newpoints\Core\get_setting;
 use function Newpoints\Core\language_load;
 use function Newpoints\BankSystem\Core\templates_get;
@@ -50,15 +53,33 @@ use function Newpoints\Core\url_handler_build;
 use function Newpoints\Core\users_get_group_permissions;
 
 use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
+use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_LOGGED;
+use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_NEW;
+use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_PROCESSED;
+use const Newpoints\BankSystem\Core\TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING;
+use const Newpoints\BankSystem\Core\TRANSACTION_INVESTMENT_TYPE_RECURRING;
+use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_LIVE;
+use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_CANCELLED;
+use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_NO_FUNDS;
 use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_DEPOSIT;
+use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_INVESTMENT;
 use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_WITHDRAW;
 
 function newpoints_global_start(array &$hook_arguments): array
 {
     $hook_arguments['newpoints.php'] = array_merge($hook_arguments['newpoints.php'], [
         'newpoints_bank_system_page_table_transactions_row',
+        'newpoints_bank_system_page_table_transactions_row_options_cancel',
+        'newpoints_bank_system_page_button_transaction',
+        'newpoints_bank_system_page_button_investment',
         'newpoints_bank_system_page_table_transactions',
+
+        'newpoints_bank_system_home_user_details',
+        'newpoints_bank_system_home_table_transactions_row',
+        'newpoints_bank_system_home_table_transactions',
     ]);
+
+    execute_task();
 
     return $hook_arguments;
 }
@@ -82,6 +103,48 @@ function newpoints_default_menu(array &$menu): array
 
 function newpoints_home_end(): bool
 {
+    global $mybb;
+    global $newpoints_bank_details;
+
+    $newpoints_bank_details = '';
+
+    if (!empty($mybb->usergroup['newpoints_bank_system_can_invest'])) {
+        global $lang;
+
+        language_load('bank_system');
+
+        $user_interest_rate = my_number_format(($mybb->usergroup['newpoints_bank_system_interest']) / 100);
+
+        $user_interest_period = my_number_format($mybb->usergroup['newpoints_bank_system_interest_period']);
+
+        switch ($mybb->usergroup['newpoints_bank_system_interest_period_type']) {
+            case INTEREST_PERIOD_TYPE_DAY:
+                if ($mybb->usergroup['newpoints_bank_system_interest_period'] > 1) {
+                    $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_days;
+                } else {
+                    $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_day;
+                }
+                break;
+            default:
+                if ($mybb->usergroup['newpoints_bank_system_interest_period'] > 1) {
+                    $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_weeks;
+                } else {
+                    $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_week;
+                }
+                break;
+        }
+
+        $user_interest_limit = (float)$mybb->usergroup['newpoints_bank_system_interest_limit'];
+
+        if (!empty($user_interest_limit)) {
+            $user_interest_limit = points_format($user_interest_limit);
+        } else {
+            $user_interest_limit = $lang->newpoints_bank_system_page_user_interest_limit_no_limit;
+        }
+
+        $newpoints_bank_details = eval(templates_get('home_user_details'));
+    }
+
     if (!($limit = (int)get_setting('bank_system_home_transactions'))) {
         return false;
     }
@@ -99,9 +162,9 @@ function newpoints_home_end(): bool
 
     $query = $db->simple_select(
         'newpoints_bank_system_transactions',
-        'transaction_id, transaction_type, transaction_points, transaction_stamp',
+        'transaction_id, transaction_type, transaction_points, transaction_stamp, complete_status',
         implode(' AND ', $where_clauses),
-        ['order_by' => 'transaction_stamp', 'order_dir' => 'desc', 'limit' => $limit]
+        ['order_by' => 'transaction_id', 'order_dir' => 'desc', 'limit' => $limit]
     );
 
     if (!$db->num_rows($query)) {
@@ -115,19 +178,48 @@ function newpoints_home_end(): bool
     while ($transaction_data = $db->fetch_array($query)) {
         $transaction_id = my_number_format($transaction_data['transaction_id']);
 
-        if ((int)$transaction_data['transaction_type'] === TRANSACTION_TYPE_DEPOSIT) {
+        $transaction_type = (int)$transaction_data['transaction_type'];
+
+        if ($transaction_type === TRANSACTION_TYPE_DEPOSIT) {
             $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_deposit;
 
             $transaction_type_class = 'transaction_type_deposit';
-        } else {
-            $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_withdrawal;
+        } elseif ($transaction_type === TRANSACTION_TYPE_INVESTMENT) {
+            $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_investment;
 
-            $transaction_type_class = 'transaction_type_withdrawal';
+            $transaction_type_class = 'transaction_type_investment';
+        } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
+            $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_deposit;
+
+            $transaction_type_class = 'transaction_type_deposit';
+        }
+        {
+            $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_withdraw;
+
+            $transaction_type_class = 'transaction_type_withdraw';
         }
 
         $transaction_points = points_format((float)$transaction_data['transaction_points']);
 
         $transaction_stamp = my_date('normal', $transaction_data['transaction_stamp']);
+
+        switch ($transaction_data['complete_status']) {
+            case TRANSACTION_COMPLETE_STATUS_NEW:
+                $transaction_complete_status = $lang->newpoints_bank_system_page_logs_table_complete_status_new;
+
+                $transaction_complete_status_class = 'transaction_complete_status_new';
+                break;
+            case TRANSACTION_COMPLETE_STATUS_PROCESSED:
+                $transaction_complete_status = $lang->newpoints_bank_system_page_logs_table_complete_status_processed;
+
+                $transaction_complete_status_class = 'transaction_complete_status_processed';
+                break;
+            case TRANSACTION_COMPLETE_STATUS_LOGGED:
+                $transaction_complete_status = $lang->newpoints_bank_system_page_logs_table_complete_status_logged;
+
+                $transaction_complete_status_class = 'transaction_complete_status_logged';
+                break;
+        }
 
         $transactions_list .= eval(templates_get('home_table_transactions_row'));
 
@@ -219,18 +311,77 @@ function newpoints_terminate(): bool
 
     $order_id = $mybb->get_input('order_id', MyBB::INPUT_INT);
 
-    if ($mybb->get_input('view') === 'transaction') {
+    $transaction_status_live = TRANSACTION_STATUS_LIVE;
+
+    $transaction_status_cancelled = TRANSACTION_STATUS_CANCELLED;
+
+    $transaction_status_no_funds = TRANSACTION_STATUS_NO_FUNDS;
+
+    if ($mybb->get_input('view') === 'cancel') {
+        if ($mybb->request_method === 'post') {
+            verify_post_check($mybb->get_input('my_post_key'));
+
+            $confirm_transaction = $mybb->get_input('confirm', MyBB::INPUT_BOOL);
+
+            $transaction_id = $mybb->get_input('transaction_id', MyBB::INPUT_INT);
+
+            $transaction_data = transaction_get([
+                "transaction_id='{$transaction_id}'",
+                "user_id='{$current_user_id}'",
+                "transaction_status='{$transaction_status_live}'"
+            ]);
+
+            if (empty($transaction_data)) {
+                error_no_permission();
+            }
+
+            $update_data = [
+                'transaction_status' => $transaction_status_cancelled,
+                'complete_status' => TRANSACTION_COMPLETE_STATUS_NEW
+            ];
+
+            if ($confirm_transaction) {
+                transaction_update($update_data, $transaction_id);
+
+                execute_task();
+
+                $mybb->settings['redirects'] = $mybb->user['showredirect'] = 0;
+
+                redirect(
+                    $mybb->settings['bburl'] . '/' . url_handler_build($url_params)
+                );
+            } else {
+                add_breadcrumb(
+                    $lang->newpoints_bank_system_page_breadcrumb_transaction,
+                    $mybb->settings['bburl'] . '/' . url_handler_build($url_params)
+                );
+
+                $lang->newpoints_page_confirm_table_purchase_title = $lang->newpoints_bank_system_page_confirm_transaction_title;
+
+                $lang->newpoints_page_confirm_table_purchase_button = $lang->newpoints_bank_system_page_buttons_transaction;
+
+                page_build_cancel_confirmation(
+                    'transaction_id',
+                    $transaction_id,
+                    $lang->newpoints_bank_system_page_confirm_investment_cancel_description,
+                    'cancel'
+                );
+            }
+        }
+
+        error_no_permission();
+    } elseif ($mybb->get_input('view') === 'transaction') {
         if (!can_create_transaction($current_user_id)) {
             error_no_permission();
         }
 
-        $transaction_type_deposit = TRANSACTION_TYPE_DEPOSIT;
-
-        $transaction_type_withdraw = TRANSACTION_TYPE_WITHDRAW;
-
         $transaction_type = $mybb->get_input('transaction_type', MyBB::INPUT_INT);
 
         $transaction_points = $mybb->get_input('transaction_points', MyBB::INPUT_FLOAT);
+
+        $transaction_type_deposit = TRANSACTION_TYPE_DEPOSIT;
+
+        $transaction_type_withdraw = TRANSACTION_TYPE_WITHDRAW;
 
         $minimum_transaction_points = min(
             (float)$mybb->usergroup['newpoints_bank_system_minimum_deposit'],
@@ -241,17 +392,23 @@ function newpoints_terminate(): bool
             $transaction_points = $minimum_transaction_points;
         }
 
-        $optionDisabledElementDeposit = $optionDisabledElementWithdraw = '';
+        $optionDisabledSelectedElementDeposit = $optionDisabledSelectedElementWithdraw = '';
 
         if (empty($mybb->usergroup['newpoints_bank_system_can_deposit'])) {
-            $optionDisabledElementDeposit = 'disabled="disabled"';
+            $optionDisabledSelectedElementDeposit = 'disabled="disabled"';
+        } elseif ($transaction_type === $transaction_type_deposit) {
+            $optionDisabledSelectedElementDeposit = 'selected="selected"';
         }
 
         if (empty($mybb->usergroup['newpoints_bank_system_can_withdraw'])) {
             $optionDisabledElementWithdraw = 'disabled="disabled"';
+        } elseif ($transaction_type === $transaction_type_withdraw) {
+            $optionDisabledElementWithdraw = 'selected="selected"';
         }
 
         if ($mybb->request_method === 'post') {
+            verify_post_check($mybb->get_input('my_post_key'));
+
             // we set this to false to force redirect the user to the confirm page
             $confirm_transaction = $mybb->get_input('confirm', MyBB::INPUT_BOOL);
 
@@ -289,23 +446,15 @@ function newpoints_terminate(): bool
                 }
             }
 
-            $confirm_transaction = !empty($errors) && $confirm_transaction;
+            $confirm_transaction = empty($errors) && $confirm_transaction;
 
             if ($errors) {
                 $newpoints_errors = inline_error($errors);
             }
 
-            $mybb->settings['redirects'] = $mybb->user['showredirect'] = 0;
-
             if ($confirm_transaction) {
                 transaction_insert($insert_data);
             } else {
-                $url_params['view'] = 'transaction';
-
-                $url_params['transaction_type'] = $transaction_type;
-
-                $url_params['transaction_points'] = $transaction_points;
-
                 add_breadcrumb(
                     $lang->newpoints_bank_system_page_breadcrumb_transaction,
                     $mybb->settings['bburl'] . '/' . url_handler_build($url_params)
@@ -313,7 +462,7 @@ function newpoints_terminate(): bool
 
                 $lang->newpoints_page_confirm_table_purchase_title = $lang->newpoints_bank_system_page_confirm_transaction_title;
 
-                $lang->newpoints_page_confirm_table_purchase_button = $lang->newpoints_bank_system_page_buttons_transaction_create;
+                $lang->newpoints_page_confirm_table_purchase_button = $lang->newpoints_bank_system_page_buttons_transaction;
 
                 page_build_purchase_confirmation(
                     $lang->newpoints_bank_system_page_confirm_transaction_description,
@@ -326,6 +475,8 @@ function newpoints_terminate(): bool
 
             execute_task();
 
+            $mybb->settings['redirects'] = $mybb->user['showredirect'] = 0;
+
             redirect(
                 $mybb->settings['bburl'] . '/' . url_handler_build($url_params)
             );
@@ -334,6 +485,104 @@ function newpoints_terminate(): bool
         global $theme;
 
         echo eval(templates_get('page_transaction', false));
+
+        exit;
+    } elseif ($mybb->get_input('view') === 'investment') {
+        if (!can_create_investment($current_user_id)) {
+            error_no_permission();
+        }
+
+        $transaction_type = TRANSACTION_TYPE_INVESTMENT;
+
+        $investment_type = $mybb->get_input('investment_type', MyBB::INPUT_INT);
+
+        $investment_type_not_recurring = TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING;
+
+        $investment_type_recurring = TRANSACTION_INVESTMENT_TYPE_RECURRING;
+
+        $transaction_points = $mybb->get_input('transaction_points', MyBB::INPUT_FLOAT);
+
+        $minimum_transaction_points = min(
+            (float)$mybb->usergroup['newpoints_bank_system_minimum_deposit'],
+            (float)$mybb->usergroup['newpoints_bank_system_minimum_withdraw']
+        );
+
+        if ($transaction_points < $minimum_transaction_points) {
+            $transaction_points = $minimum_transaction_points;
+        }
+
+        $optionDisabledSelectedElementNotRecurring = $optionDisabledSelectedElementRecurring = '';
+
+        if ($investment_type === $investment_type_recurring) {
+            $optionDisabledSelectedElementRecurring = 'selected="selected"';
+        } else {
+            $optionDisabledSelectedElementNotRecurring = 'selected="selected"';
+
+            $investment_type = $investment_type_not_recurring;
+        }
+
+        if ($mybb->request_method === 'post') {
+            verify_post_check($mybb->get_input('my_post_key'));
+
+            // we set this to false to force redirect the user to the confirm page
+            $confirm_transaction = $mybb->get_input('confirm', MyBB::INPUT_BOOL);
+
+            $insert_data = [
+                'user_id' => $current_user_id,
+                'transaction_type' => $transaction_type,
+                'transaction_points' => $transaction_points,
+                'investment_type' => $investment_type
+            ];
+
+            $errors = [];
+
+            if ($insert_data['transaction_points'] < $mybb->usergroup['newpoints_bank_system_minimum_deposit']) {
+                $errors[] = $lang->newpoints_bank_system_error_transaction_minimum_points_deposit;
+            }
+
+            if ($insert_data['transaction_points'] > $mybb->user['newpoints']) {
+                $errors[] = $lang->newpoints_bank_system_error_transaction_no_enough_points_deposit;
+            }
+
+            $confirm_transaction = empty($errors) && $confirm_transaction;
+
+            if ($errors) {
+                $newpoints_errors = inline_error($errors);
+            }
+
+            if ($confirm_transaction) {
+                transaction_insert($insert_data);
+            } else {
+                add_breadcrumb(
+                    $lang->newpoints_bank_system_error_transaction_no_enough_points_investment,
+                    $mybb->settings['bburl'] . '/' . url_handler_build($url_params)
+                );
+
+                $lang->newpoints_page_confirm_table_purchase_title = $lang->newpoints_bank_system_page_confirm_investment_title;
+
+                $lang->newpoints_page_confirm_table_purchase_button = $lang->newpoints_bank_system_page_buttons_investment;
+
+                page_build_purchase_confirmation(
+                    $lang->newpoints_bank_system_page_confirm_transaction_description,
+                    'investment_type',
+                    $investment_type,
+                    'investment',
+                    eval(templates_get('page_investment_confirm'))
+                );
+            }
+
+            execute_task();
+
+            $mybb->settings['redirects'] = $mybb->user['showredirect'] = 0;
+
+            redirect(
+                $mybb->settings['bburl'] . '/' . url_handler_build($url_params)
+            );
+        }
+
+        global $theme;
+
+        echo eval(templates_get('page_investment', false));
 
         exit;
     } else {
@@ -361,10 +610,10 @@ function newpoints_terminate(): bool
 
         $query = $db->simple_select(
             'newpoints_bank_system_transactions',
-            'transaction_id, transaction_type, transaction_points, transaction_stamp, transaction_status',
+            'transaction_id, transaction_type, transaction_points, transaction_stamp, investment_type, investment_stamp, investment_execution_stamp, transaction_status, complete_status',
             "user_id='{$current_user_id}'",
             [
-                'order_by' => 'transaction_stamp',
+                'order_by' => 'transaction_id',
                 'order_dir' => 'desc',
                 'limit_start' => $limit_start,
                 'limit' => $per_page
@@ -381,19 +630,80 @@ function newpoints_terminate(): bool
             while ($transaction_data = $db->fetch_array($query)) {
                 $transaction_id = my_number_format($transaction_data['transaction_id']);
 
-                if ((int)$transaction_data['transaction_type'] === TRANSACTION_TYPE_DEPOSIT) {
-                    $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_deposit;
+                $transaction_type = (int)$transaction_data['transaction_type'];
+
+                if ($transaction_type === TRANSACTION_TYPE_DEPOSIT) {
+                    $transaction_type = $lang->newpoints_bank_system_page_table_transactions_type_deposit;
 
                     $transaction_type_class = 'transaction_type_deposit';
-                } else {
-                    $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_withdrawal;
+                } elseif ($transaction_type === TRANSACTION_TYPE_INVESTMENT) {
+                    $transaction_type = $lang->newpoints_bank_system_page_table_transactions_type_investment;
 
-                    $transaction_type_class = 'transaction_type_withdrawal';
+                    $transaction_type_class = 'transaction_type_investment';
+                } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
+                    $transaction_type = $lang->newpoints_bank_system_page_table_transactions_type_withdraw;
+
+                    $transaction_type_class = 'transaction_type_withdraw';
                 }
 
                 $transaction_points = points_format((float)$transaction_data['transaction_points']);
 
                 $transaction_stamp = my_date('normal', $transaction_data['transaction_stamp']);
+
+                $investment_type = $investment_stamp = $investment_execution_stamp = $transaction_options = '-';
+
+                if ((int)$transaction_data['transaction_type'] === TRANSACTION_TYPE_INVESTMENT && (int)$transaction_data['transaction_status'] === $transaction_status_live) {
+                    switch ($transaction_data['investment_type']) {
+                        case TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING:
+                            $investment_type = $lang->newpoints_bank_system_page_table_transactions_investment_type_not_recurring;
+                            break;
+                        case TRANSACTION_INVESTMENT_TYPE_RECURRING:
+                            $investment_type = $lang->newpoints_bank_system_page_table_transactions_investment_type_recurring;
+                            break;
+                    }
+
+                    $investment_stamp = my_date('normal', $transaction_data['investment_stamp']);
+
+                    $investment_execution_stamp = my_date('normal', $transaction_data['investment_execution_stamp']);
+
+                    $transaction_options = eval(templates_get('page_table_transactions_row_options_cancel'));
+                }
+
+                switch ($transaction_data['transaction_status']) {
+                    case $transaction_status_live:
+                        $transaction_status = $lang->newpoints_bank_system_page_table_transactions_transaction_status_live;
+
+                        $transaction_complete_status_class = 'transaction_complete_status_new';
+                        break;
+                    case $transaction_status_cancelled:
+                        $transaction_status = $lang->newpoints_bank_system_page_table_transactions_transaction_status_cancelled;
+
+                        $transaction_complete_status_class = 'transaction_complete_status_processed';
+                        break;
+                    case $transaction_status_no_funds:
+                        $transaction_status = $lang->newpoints_bank_system_page_table_transactions_transaction_status_no_funds;
+
+                        $transaction_complete_status_class = 'transaction_complete_status_logged';
+                        break;
+                }
+
+                switch ($transaction_data['complete_status']) {
+                    case TRANSACTION_COMPLETE_STATUS_NEW:
+                        $transaction_complete_status = $lang->newpoints_bank_system_page_table_transactions_complete_status_new;
+
+                        $transaction_complete_status_class = 'transaction_complete_status_new';
+                        break;
+                    case TRANSACTION_COMPLETE_STATUS_PROCESSED:
+                        $transaction_complete_status = $lang->newpoints_bank_system_page_table_transactions_complete_status_processed;
+
+                        $transaction_complete_status_class = 'transaction_complete_status_processed';
+                        break;
+                    case TRANSACTION_COMPLETE_STATUS_LOGGED:
+                        $transaction_complete_status = $lang->newpoints_bank_system_page_table_transactions_complete_status_logged;
+
+                        $transaction_complete_status_class = 'transaction_complete_status_logged';
+                        break;
+                }
 
                 $transactions_list .= eval(templates_get('page_table_transactions_row'));
 
@@ -420,40 +730,15 @@ function newpoints_terminate(): bool
             $newpoints_buttons .= eval(templates_get('page_button_transaction'));
         }
 
-        $page_interest_note = '';
+        if (!$is_manage_page && can_create_investment($current_user_id)) {
+            $investment_url = url_handler_build(array_merge($url_params, ['view' => 'investment']));
 
-        if (!empty($mybb->usergroup['newpoints_rate_bank_system_interest'])) {
-            $user_interest_rate = my_number_format($mybb->usergroup['newpoints_rate_bank_system_interest'] / 100);
-
-            $user_interest_period = my_number_format($mybb->usergroup['newpoints_rate_bank_system_interest_period']);
-
-            switch ($mybb->usergroup['newpoints_rate_bank_system_interest_period_type']) {
-                case INTEREST_PERIOD_TYPE_DAY:
-                    if ($mybb->usergroup['newpoints_rate_bank_system_interest_period'] > 1) {
-                        $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_days;
-                    } else {
-                        $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_day;
-                    }
-                    break;
-                default:
-                    if ($mybb->usergroup['newpoints_rate_bank_system_interest_period'] > 1) {
-                        $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_weeks;
-                    } else {
-                        $user_interest_period_type = $lang->newpoints_bank_system_page_user_interest_period_week;
-                    }
-                    break;
-            }
-
-            $user_interest_limit = (float)$mybb->usergroup['newpoints_rate_bank_system_interest_limit'];
-
-            if (!empty($user_interest_limit)) {
-                $user_interest_limit = points_format($user_interest_limit);
-            } else {
-                $user_interest_limit = $lang->newpoints_bank_system_page_user_interest_limit_no_limit;
-            }
-
-            $page_interest_note = eval(templates_get('page_interest_note'));
+            $newpoints_buttons .= eval(templates_get('page_button_investment'));
         }
+
+        $user_bank_balance = points_format((int)$mybb->user['newpoints_bank']);
+
+        $user_bank_investment_balance = points_format((int)$mybb->user['newpoints_bank_investment']);
 
         $newpoints_content = eval(templates_get('page_table_transactions'));
     }

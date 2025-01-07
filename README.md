@@ -99,7 +99,12 @@ Follow the next steps in order to update your copy of this plugin.
 
 ### Template Modifications <a name = "template_modifications"></a>
 
-No template edits are required for this plugin.
+The following template modifications are required to use this plugin.
+
+1. Open template `newpoints_home` and add `{$newpoints_bank_details}` after `{$latest_transactions}` to display the bank
+   user details.
+
+```html
 
 [Go up to Table of Contents](#table_of_contents)
 

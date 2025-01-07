@@ -1,7 +1,7 @@
 <table border="0" cellspacing="{$theme['borderwidth']}" cellpadding="{$theme['tablespace']}"
        class="tborder">
     <tr>
-        <td class="thead" colspan="4">
+        <td class="thead" colspan="5">
             <strong>{$lang->newpoints_bank_system_page_logs_table}</strong>
         </td>
     </tr>
@@ -9,14 +9,17 @@
         <td class="tcat" width="5%">
             <strong>{$lang->newpoints_bank_system_page_logs_table_id}</strong>
         </td>
-        <td class="tcat" width="40%">
+        <td class="tcat" width="35%">
             <strong>{$lang->newpoints_bank_system_page_logs_table_type}</strong>
         </td>
-        <td class="tcat" width="40%">
+        <td class="tcat" width="35%">
             <strong>{$lang->newpoints_bank_system_page_logs_table_points}</strong>
         </td>
         <td class="tcat" width="15%">
             <strong>{$lang->newpoints_bank_system_page_logs_table_stamp}</strong>
+        </td>
+        <td class="tcat" width="10%">
+            <strong>{$lang->newpoints_bank_system_page_logs_table_complete_status}</strong>
         </td>
     </tr>
     {$transactions_list}
@@ -27,7 +30,23 @@
         color: darkgreen;
     }
 
-    .transaction_type_withdrawal {
+    .transaction_type_investment {
+        color: darkgreen;
+    }
+
+    .transaction_type_withdraw {
+        color: darkred;
+    }
+
+    .transaction_complete_status_new {
+        color: gray;
+    }
+
+    .transaction_complete_status_processed {
         color: darkorange;
+    }
+
+    .transaction_complete_status_logged {
+        color: darkgreen;
     }
 </style>

@@ -1,0 +1,7 @@
+<form action="{$mybb->settings['bburl']}/{$newpoints_file}" method="post">
+    <input type="hidden" name="action" value="{$action_name}"/>
+    <input type="hidden" name="my_post_key" value="{$mybb->post_code}"/>
+    <input type="hidden" name="transaction_id" value="{$transaction_id}"/>
+    <input type="hidden" name="view" value="cancel"/>
+    <input type="submit" class="button" value="{$lang->newpoints_bank_system_page_table_transactions_options_cancel}"/>
+</form>
