@@ -86,4 +86,9 @@ function newpoints_bank_system_is_installed(): bool
     $groupzerolesser[] = 'newpoints_rate_bank_system_withdraw';
 
     $grouppermbyswitch['newpoints_rate_bank_system_withdraw'] = 'newpoints_bank_system_can_view';
+
+    // the following is so days has priority over weeks, and weeks over months
+    $groupzerolesser[] = 'newpoints_rate_bank_system_interest_period_type';
+
+    $grouppermbyswitch['newpoints_rate_bank_system_interest_period_type'] = 'newpoints_rate_bank_system_interest';
 })();

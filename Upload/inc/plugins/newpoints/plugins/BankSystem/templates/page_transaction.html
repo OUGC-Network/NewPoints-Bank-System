@@ -1,0 +1,58 @@
+<div class="modal">
+    <div style="overflow-y: auto; max-height: 400px;">
+        <form action="{$mybb->settings['bburl']}/{$newpoints_file}" method="post">
+            <input type="hidden" name="action" value="{$action_name}"/>
+            <input type="hidden" name="my_post_key" value="{$mybb->post_code}"/>
+            <input type="hidden" name="view" value="transaction"/>
+            <input type="hidden" name="uid" value="{$current_user_id}"/>
+            <table cellspacing="{$theme['borderwidth']}" cellpadding="{$theme['tablespace']}" class="tborder">
+                <tr>
+                    <td class="thead" colspan="2">
+                        <strong>{$lang->newpoints_bank_system_page_transaction}</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tcat smalltext" colspan="2">
+                        <strong>{$lang->newpoints_bank_system_page_transaction_description}</strong>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="trow1" width="40%">
+                        <strong>{$lang->newpoints_bank_system_page_transaction_type}:</strong>
+                    </td>
+                    <td class="trow1">
+                        <select name="transaction_type">
+                            <option value="{$transaction_type_deposit}" {$optionDisabledElementDeposit}>
+                                {$lang->newpoints_bank_system_page_transaction_type_deposit}
+                            </option>
+                            <option value="{$transaction_type_withdraw}" {$optionDisabledElementWithdraw}>
+                                {$lang->newpoints_bank_system_page_transaction_type_withdrawal}
+                            </option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="trow2">
+                        <strong>{$lang->newpoints_bank_system_page_transaction_points}:</strong>
+                    </td>
+                    <td class="trow2">
+                        <input type="number" class="textbox" name="transaction_points" value="{$transaction_points}"
+                               step="0.01" min="1"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="trow1" colspan="2">
+                        <input type="checkbox" class="checkbox" name="confirm" id="transaction_confirm" value="1"/>
+                        <label for="transaction_confirm">{$lang->newpoints_bank_system_page_transaction_confirm}</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="tfoot" colspan="2" align="center">
+                        <input type="submit" class="button"
+                               value="{$lang->newpoints_bank_system_page_buttons_transaction_create}">
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>

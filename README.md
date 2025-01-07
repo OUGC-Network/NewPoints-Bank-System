@@ -70,8 +70,8 @@ A setup that meets the following requirements is necessary to use this plugin.
    │ │ │ │ │ ├── settings
    │ │ │ │ │ │ ├── bank_system.json
    │ │ │ │ │ ├── templates
-   │ │ │ │ │ │ ├── page_table_transactions.html
-   │ │ │ │ │ │ ├── page_table_transactions_row.html
+   │ │ │ │ │ │ ├── home_table_transactions.html
+   │ │ │ │ │ │ ├── home_table_transactions_row.html
    │ │ │ │ │ ├── admin.php
    │ │ │ │ │ ├── core.php
    │ │ │ │ ├── newpoints_bank_system.php

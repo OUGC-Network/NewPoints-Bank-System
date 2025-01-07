@@ -34,6 +34,7 @@ use function Newpoints\Admin\db_drop_columns;
 use function Newpoints\Admin\db_verify_columns;
 use function Newpoints\Admin\db_verify_columns_exists;
 use function Newpoints\Admin\db_verify_tables;
+use function Newpoints\Admin\db_verify_tables_exists;
 use function Newpoints\Core\language_load;
 use function Newpoints\Core\log_remove;
 use function Newpoints\Core\plugins_version_delete;
@@ -41,6 +42,12 @@ use function Newpoints\Core\plugins_version_get;
 use function Newpoints\Core\plugins_version_update;
 use function Newpoints\Core\settings_remove;
 use function Newpoints\Core\templates_remove;
+use function Newpoints\Core\task_enable;
+use function Newpoints\Core\task_disable;
+use function Newpoints\Core\task_delete;
+
+use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
+use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_WEEK;
 
 const TABLES_DATA = [
     'newpoints_bank_system_transactions' => [
@@ -72,6 +79,11 @@ const TABLES_DATA = [
             'default' => 0
         ],
         'transaction_status' => [
+            'type' => 'SMALLINT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'complete_status' => [
             'type' => 'SMALLINT',
             'unsigned' => true,
             'default' => 0
@@ -211,7 +223,15 @@ function plugin_information(): array
 
 function plugin_activation(): bool
 {
-    global $db;
+    global $lang;
+
+    language_load('bank_system');
+
+    task_enable(
+        'newpoints_bank_system',
+        $lang->newpoints_bank_system,
+        $lang->newpoints_bank_system_desc
+    );
 
     $current_version = plugins_version_get('bank_system');
 
@@ -232,12 +252,14 @@ function plugin_activation(): bool
 
 function plugin_deactivation(): bool
 {
+    task_disable('newpoints_bank_system');
+
     return true;
 }
 
 function plugin_is_installed(): bool
 {
-    return \Newpoints\Admin\db_verify_tables_exists(TABLES_DATA) &&
+    return db_verify_tables_exists(TABLES_DATA) &&
         db_verify_columns_exists(TABLES_DATA) &&
         db_verify_columns_exists(FIELDS_DATA);
 }
@@ -263,7 +285,9 @@ function plugin_uninstallation(): bool
         'newpoints_bank_system_'
     );
 
-    templates_remove(['page_table_transactions', 'page_table_transactions_row'], 'newpoints_bank_system_');
+    templates_remove(['home_table_transactions', 'home_table_transactions_row'], 'newpoints_bank_system_');
+
+    task_delete('newpoints_bank_system');
 
     plugins_version_delete('bank_system');
 
@@ -275,8 +299,7 @@ function options_list_interest_period_type(): array
     global $lang;
 
     return [
-        \Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY => $lang->days,
-        \Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_WEEK => $lang->weeks,
-        \Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_MONTH => $lang->months
+        INTEREST_PERIOD_TYPE_DAY => $lang->days,
+        INTEREST_PERIOD_TYPE_WEEK => $lang->weeks
     ];
 }

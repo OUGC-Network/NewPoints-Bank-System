@@ -1,0 +1,24 @@
+<tr>
+    <td class="trow1" width="20%">
+        <strong>{$lang->newpoints_bank_system_page_confirm_transaction_type}:</strong>
+    </td>
+    <td class="trow1">
+        <select name="transaction_type">
+            <option value="{$transaction_type_deposit}" {$optionDisabledElementDeposit}>
+                {$lang->newpoints_bank_system_page_transaction_type_deposit}
+            </option>
+            <option value="{$transaction_type_withdraw}" {$optionDisabledElementWithdraw}>
+                {$lang->newpoints_bank_system_page_transaction_type_withdrawal}
+            </option>
+        </select>
+    </td>
+</tr>
+<tr>
+    <td class="trow2" width="20%">
+        <strong>{$lang->newpoints_bank_system_page_confirm_transaction_points}:</strong>
+    </td>
+    <td class="trow2">
+        <input type="number" class="textbox" name="transaction_points" value="{$transaction_points}"
+               step="0.01" min="1"/>
+    </td>
+</tr>
