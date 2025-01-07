@@ -62,6 +62,7 @@ $l = [
     'newpoints_bank_system_page_user_interest_limit_no_limit' => 'no limit',
 
     'newpoints_bank_system_page_table_transactions' => 'Account Transactions',
+    'newpoints_bank_system_page_table_transactions_empty' => 'No transactions found.',
     'newpoints_bank_system_page_table_transactions_id' => 'ID',
     'newpoints_bank_system_page_table_transactions_type' => 'Type',
     'newpoints_bank_system_page_table_transactions_type_deposit' => 'Deposit',
@@ -126,4 +127,14 @@ $l = [
     'newpoints_bank_system_error_transaction_no_permission_withdraw' => 'You are not allowed to withdraw points from your bank account.',
     'newpoints_bank_system_error_transaction_minimum_points_deposit' => 'The minimum amount of points to deposit to your bank account is {1}.',
     'newpoints_bank_system_error_transaction_minimum_points_withdraw' => 'The minimum amount of points to withdraw from your bank account is {1}.',
+
+    'newpoints_bank_system_wol_location' => 'Viewing <a href="{1}/{2}">Bank</a> page.',
+
+    'newpoints_signature_market_page_logs_bank_system_deposit' => 'Bank Deposit',
+    'newpoints_signature_market_page_logs_bank_system_investment' => 'Bank Investment',
+    'newpoints_signature_market_page_logs_bank_system_withdraw' => 'Bank Withdraw',
+    'newpoints_signature_market_page_logs_bank_system_interest_profit' => 'Bank Interest Profit',
+    'newpoints_signature_market_page_logs_bank_system_investment_cancel' => 'Bank Investment Cancel',
+
+    'newpoints_signature_market_page_logs_bank_system_log_type_transaction_id' => 'Transaction ID: {1}',
 ];

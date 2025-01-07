@@ -41,11 +41,11 @@ use const Newpoints\Core\LOGGING_TYPE_INCOME;
 
 const TRANSACTION_TYPE_DEPOSIT = 1;
 
-const TRANSACTION_TYPE_WITHDRAW = 2;
+const TRANSACTION_TYPE_INVESTMENT = 2;
 
-const TRANSACTION_TYPE_INVESTMENT = 3;
+const TRANSACTION_TYPE_WITHDRAW = 3;
 
-const TRANSACTION_TYPE_INTEREST = 3;
+const TRANSACTION_TYPE_INTEREST = 4;
 
 const TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING = 0;
 
@@ -88,14 +88,21 @@ function execute_task(): bool
 
     $transaction_status_no_funds = TRANSACTION_STATUS_NO_FUNDS;
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'transaction_id, user_id, transaction_type, transaction_points, investment_stamp, complete_status',
-        "complete_status IN ('{$complete_status_new}', '{$complete_status_processed}') AND transaction_status='{$transaction_status_live}'",
-        ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]
-    );
+    $where_clauses = [
+        'complete_status' => "complete_status IN ('{$complete_status_new}', '{$complete_status_processed}')",
+        'transaction_status' => "transaction_status='{$transaction_status_live}'",
+    ];
 
-    while ($transaction_data = $db->fetch_array($query)) {
+    $transaction_objects = transaction_get_multiple($where_clauses, [
+        'transaction_id',
+        'user_id',
+        'transaction_type',
+        'transaction_points',
+        'investment_stamp',
+        'complete_status',
+    ], ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]);
+
+    foreach ($transaction_objects as $transaction_data) {
         $transaction_id = (int)$transaction_data['transaction_id'];
 
         $user_id = (int)$transaction_data['user_id'];
@@ -197,16 +204,21 @@ function execute_task(): bool
 
     $transaction_type_investment = TRANSACTION_TYPE_INVESTMENT;
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'transaction_id, user_id, transaction_points, investment_type, investment_stamp',
-        "transaction_type='{$transaction_type_investment}' AND complete_status='{$complete_status_logged}' AND transaction_status='{$transaction_status_live}'",
-        ['order_by' => 'investment_execution_stamp', 'order_dir' => 'asc', 'limit' => 10]
-    );
+    $where_clauses['complete_status'] = "complete_status='{$complete_status_logged}'";
+
+    $where_clauses['transaction_type'] = "transaction_type='{$transaction_type_investment}'";
+
+    $transaction_objects = transaction_get_multiple($where_clauses, [
+        'transaction_id',
+        'user_id',
+        'transaction_points',
+        'investment_type',
+        'investment_stamp',
+    ], ['order_by' => 'investment_execution_stamp', 'order_dir' => 'asc', 'limit' => 10]);
 
     $update_data = ['investment_execution_stamp' => TIME_NOW];
 
-    while ($transaction_data = $db->fetch_array($query)) {
+    foreach ($transaction_objects as $transaction_data) {
         $transaction_id = (int)$transaction_data['transaction_id'];
 
         $user_id = (int)$transaction_data['user_id'];
@@ -279,14 +291,18 @@ function execute_task(): bool
         user_rebuild_bank_details($user_id);
     }
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'transaction_id, user_id, transaction_type, transaction_points, investment_stamp, complete_status',
-        "transaction_type='{$transaction_type_investment}' AND complete_status IN ('{$complete_status_new}', '{$complete_status_processed}') AND transaction_status='{$transaction_status_cancelled}'",
-        ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]
-    );
+    $where_clauses['complete_status'] = "complete_status IN ('{$complete_status_new}', '{$complete_status_processed}')";
 
-    while ($transaction_data = $db->fetch_array($query)) {
+    $where_clauses['transaction_status'] = "transaction_status='{$transaction_status_cancelled}'";
+
+    $transaction_objects = transaction_get_multiple($where_clauses, [
+        'transaction_id',
+        'user_id',
+        'transaction_points',
+        'complete_status',
+    ], ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]);
+
+    foreach ($transaction_objects as $transaction_data) {
         $transaction_id = (int)$transaction_data['transaction_id'];
 
         $user_id = (int)$transaction_data['user_id'];
@@ -373,33 +389,30 @@ function user_rebuild_bank_details(int $user_id): bool
         'transaction_type' => "transaction_type='{$transaction_type_deposit}'"
     ];
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'SUM(transaction_points) AS total_deposit_points',
-        implode(' AND ', $where_clauses)
+    $transaction_objects = transaction_get_multiple(
+        $where_clauses,
+        ['SUM(transaction_points) AS total_deposit_points']
     );
 
-    $total_deposit_points = (float)$db->fetch_field($query, 'total_deposit_points');
+    $total_deposit_points = (float)($transaction_objects[0]['total_deposit_points'] ?? 0);
 
     $where_clauses['transaction_type'] = "transaction_type='{$transaction_type_investment}'";
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'SUM(transaction_points) AS total_investment_points',
-        implode(' AND ', $where_clauses)
+    $transaction_objects = transaction_get_multiple(
+        $where_clauses,
+        ['SUM(transaction_points) AS total_investment_points']
     );
 
-    $total_investment_points = (float)$db->fetch_field($query, 'total_investment_points');
+    $total_investment_points = (float)($transaction_objects[0]['total_investment_points'] ?? 0);
 
     $where_clauses['transaction_type'] = "transaction_type='{$transaction_type_withdraw}'";
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'SUM(transaction_points) AS total_withdraw_points',
-        implode(' AND ', $where_clauses)
+    $transaction_objects = transaction_get_multiple(
+        $where_clauses,
+        ['SUM(transaction_points) AS total_withdraw_points']
     );
 
-    $total_withdraw_points = (float)$db->fetch_field($query, 'total_withdraw_points');
+    $total_withdraw_points = (float)($transaction_objects[0]['total_withdraw_points'] ?? 0);
 
 
     user_update($user_id, [
@@ -484,16 +497,40 @@ function transaction_update(array $transaction_data, int $transaction_id): int
     return transaction_insert($transaction_data, true, $transaction_id);
 }
 
-function transaction_get(array $where_clauses): array
+function transaction_get(array $where_clauses, array $query_fields = []): array
 {
     global $db;
 
     $query = $db->simple_select(
         'newpoints_bank_system_transactions',
-        '*',
+        implode(',', array_merge(['transaction_id'], $query_fields)),
         implode(' AND ', $where_clauses),
         ['limit' => 1]
     );
 
     return (array)$db->fetch_array($query);
+}
+
+function transaction_get_multiple(array $where_clauses, array $query_fields = [], array $query_options = []): array
+{
+    global $db;
+
+    $query = $db->simple_select(
+        'newpoints_bank_system_transactions',
+        implode(',', $query_fields),
+        implode(' AND ', $where_clauses),
+        $query_options
+    );
+
+    if (!$db->num_rows($query)) {
+        return [];
+    }
+
+    $transactions = [];
+
+    while ($transaction_data = $db->fetch_array($query)) {
+        $transactions[] = $transaction_data;
+    }
+
+    return $transactions;
 }

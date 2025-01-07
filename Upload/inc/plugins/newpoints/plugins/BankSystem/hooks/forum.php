@@ -37,20 +37,17 @@ use function Newpoints\BankSystem\Core\can_create_transaction;
 use function Newpoints\BankSystem\Core\can_manage;
 use function Newpoints\BankSystem\Core\execute_task;
 use function Newpoints\BankSystem\Core\transaction_get;
+use function Newpoints\BankSystem\Core\transaction_get_multiple;
 use function Newpoints\BankSystem\Core\transaction_insert;
 use function Newpoints\BankSystem\Core\transaction_update;
+use function Newpoints\BankSystem\Core\templates_get;
 use function Newpoints\Core\get_setting;
 use function Newpoints\Core\language_load;
-use function Newpoints\BankSystem\Core\templates_get;
-use function Newpoints\Core\log_add;
+use function Newpoints\Core\main_file_name;
 use function Newpoints\Core\page_build_cancel_confirmation;
 use function Newpoints\Core\page_build_purchase_confirmation;
-use function Newpoints\Core\points_add_simple;
 use function Newpoints\Core\points_format;
-use function Newpoints\Core\points_subtract;
 use function Newpoints\Core\url_handler_build;
-
-use function Newpoints\Core\users_get_group_permissions;
 
 use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
 use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_LOGGED;
@@ -77,6 +74,10 @@ function newpoints_global_start(array &$hook_arguments): array
         'newpoints_bank_system_home_user_details',
         'newpoints_bank_system_home_table_transactions_row',
         'newpoints_bank_system_home_table_transactions',
+
+        'newpoints_bank_system_css',
+
+        'newpoints_logs_transaction_type',
     ]);
 
     execute_task();
@@ -99,6 +100,15 @@ function newpoints_default_menu(array &$menu): array
     }
 
     return $menu;
+}
+
+function newpoints_begin(): bool
+{
+    global $footer;
+
+    $footer .= eval(templates_get('css'));
+
+    return true;
 }
 
 function newpoints_home_end(): bool
@@ -149,7 +159,7 @@ function newpoints_home_end(): bool
         return false;
     }
 
-    global $mybb, $db, $lang, $theme;
+    global $mybb, $lang, $theme;
     global $latest_transactions;
 
     language_load('bank_system');
@@ -160,14 +170,15 @@ function newpoints_home_end(): bool
         "user_id='{$current_user_id}'"
     ];
 
-    $query = $db->simple_select(
-        'newpoints_bank_system_transactions',
-        'transaction_id, transaction_type, transaction_points, transaction_stamp, complete_status',
-        implode(' AND ', $where_clauses),
-        ['order_by' => 'transaction_id', 'order_dir' => 'desc', 'limit' => $limit]
-    );
+    $transaction_objects = transaction_get_multiple($where_clauses, [
+        'transaction_id',
+        'transaction_type',
+        'transaction_points',
+        'transaction_stamp',
+        'complete_status'
+    ], ['order_by' => 'transaction_id', 'order_dir' => 'desc', 'limit' => $limit]);
 
-    if (!$db->num_rows($query)) {
+    if (empty($transaction_objects)) {
         return false;
     }
 
@@ -175,7 +186,7 @@ function newpoints_home_end(): bool
 
     $transactions_list = '';
 
-    while ($transaction_data = $db->fetch_array($query)) {
+    foreach ($transaction_objects as $transaction_data) {
         $transaction_id = my_number_format($transaction_data['transaction_id']);
 
         $transaction_type = (int)$transaction_data['transaction_type'];
@@ -189,11 +200,6 @@ function newpoints_home_end(): bool
 
             $transaction_type_class = 'transaction_type_investment';
         } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
-            $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_deposit;
-
-            $transaction_type_class = 'transaction_type_deposit';
-        }
-        {
             $transaction_type = $lang->newpoints_bank_system_page_logs_table_type_withdraw;
 
             $transaction_type_class = 'transaction_type_withdraw';
@@ -236,6 +242,11 @@ function newpoints_logs_log_row(): bool
     global $log_data;
 
     if (!in_array($log_data['action'], [
+        'bank_system_deposit',
+        'bank_system_investment',
+        'bank_system_withdraw',
+        'bank_system_interest_profit',
+        'bank_system_investment_cancel',
     ])) {
         return false;
     }
@@ -244,6 +255,41 @@ function newpoints_logs_log_row(): bool
     global $log_action, $log_primary, $log_secondary, $log_tertiary;
 
     language_load('bank_system');
+
+    if ($log_data['action'] === 'bank_system_deposit') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_deposit;
+    }
+
+    if ($log_data['action'] === 'bank_system_investment') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment;
+    }
+
+    if ($log_data['action'] === 'bank_system_withdraw') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_withdraw;
+    }
+
+    if ($log_data['action'] === 'bank_system_interest_profit') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_interest_profit;
+    }
+
+    if ($log_data['action'] === 'bank_system_investment_cancel') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment_cancel;
+    }
+
+    $transaction_id = (int)$log_data['log_primary_id'];
+
+    $transaction_data = transaction_get(["transaction_id='{$transaction_id}'"], ['transaction_type']);
+
+    if (empty($transaction_data)) {
+        return false;
+    }
+
+    $transaction_id = (int)$transaction_data['transaction_type'];
+
+    $log_primary = $lang->sprintf(
+        $lang->newpoints_signature_market_page_logs_bank_system_log_type_transaction_id,
+        $transaction_id
+    );
 
     return true;
 }
@@ -256,6 +302,25 @@ function newpoints_logs_end(): bool
     language_load('bank_system');
 
     foreach ($action_types as $key => &$action_type) {
+        if ($key === 'bank_system_deposit') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_deposit;
+        }
+
+        if ($key === 'bank_system_investment') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment;
+        }
+
+        if ($key === 'bank_system_withdraw') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_withdraw;
+        }
+
+        if ($key === 'bank_system_interest_profit') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_interest_profit;
+        }
+
+        if ($key === 'bank_system_investment_cancel') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment_cancel;
+        }
     }
 
     return true;
@@ -401,9 +466,9 @@ function newpoints_terminate(): bool
         }
 
         if (empty($mybb->usergroup['newpoints_bank_system_can_withdraw'])) {
-            $optionDisabledElementWithdraw = 'disabled="disabled"';
+            $optionDisabledSelectedElementWithdraw = 'disabled="disabled"';
         } elseif ($transaction_type === $transaction_type_withdraw) {
-            $optionDisabledElementWithdraw = 'selected="selected"';
+            $optionDisabledSelectedElementWithdraw = 'selected="selected"';
         }
 
         if ($mybb->request_method === 'post') {
@@ -586,13 +651,11 @@ function newpoints_terminate(): bool
 
         exit;
     } else {
-        $query = $db->simple_select(
-            'newpoints_bank_system_transactions',
-            'COUNT(transaction_id) as total_transactions',
-            "user_id='{$current_user_id}'"
-        );
+        $transaction_objects = transaction_get_multiple(["user_id='{$current_user_id}'"], [
+            'COUNT(transaction_id) as total_transactions'
+        ]);
 
-        $total_transactions = (int)$db->fetch_field($query, 'total_transactions');
+        $total_transactions = (int)($transaction_objects[0]['total_transactions'] ?? 0);
 
         if ($current_page < 1) {
             $current_page = 1;
@@ -607,27 +670,31 @@ function newpoints_terminate(): bool
 
             $current_page = 1;
         }
-
-        $query = $db->simple_select(
-            'newpoints_bank_system_transactions',
-            'transaction_id, transaction_type, transaction_points, transaction_stamp, investment_type, investment_stamp, investment_execution_stamp, transaction_status, complete_status',
-            "user_id='{$current_user_id}'",
-            [
-                'order_by' => 'transaction_id',
-                'order_dir' => 'desc',
-                'limit_start' => $limit_start,
-                'limit' => $per_page
-            ]
-        );
+        $transaction_objects = transaction_get_multiple(["user_id='{$current_user_id}'"], [
+            'transaction_id',
+            'transaction_type',
+            'transaction_points',
+            'transaction_stamp',
+            'investment_type',
+            'investment_stamp',
+            'investment_execution_stamp',
+            'transaction_status',
+            'complete_status'
+        ], [
+            'order_by' => 'transaction_id',
+            'order_dir' => 'desc',
+            'limit_start' => $limit_start,
+            'limit' => $per_page
+        ]);
 
         $transactions_list = '';
 
-        if (!$db->num_rows($query)) {
+        if (empty($transaction_objects)) {
             $transactions_list = eval(templates_get('page_table_transactions_empty'));
         } else {
             $alternative_background = alt_trow(true);
 
-            while ($transaction_data = $db->fetch_array($query)) {
+            foreach ($transaction_objects as $transaction_data) {
                 $transaction_id = my_number_format($transaction_data['transaction_id']);
 
                 $transaction_type = (int)$transaction_data['transaction_type'];
@@ -756,4 +823,35 @@ function newpoints_terminate(): bool
     output_page($page_contents);
 
     exit;
+}
+
+function fetch_wol_activity_end(array &$hook_parameters): array
+{
+    if (my_strpos($hook_parameters['location'], main_file_name()) === false ||
+        my_strpos($hook_parameters['location'], 'action=' . get_setting('bank_system_action_name')) === false) {
+        return $hook_parameters;
+    }
+
+    $hook_parameters['activity'] = 'newpoints_bank_system';
+
+    return $hook_parameters;
+}
+
+function build_friendly_wol_location_end(array $hook_parameters): array
+{
+    global $mybb, $lang;
+
+    language_load('bank_system');
+
+    switch ($hook_parameters['user_activity']['activity']) {
+        case 'newpoints_bank_system':
+            $hook_parameters['location_name'] = $lang->sprintf(
+                $lang->newpoints_bank_system_wol_location,
+                $mybb->settings['bburl'],
+                url_handler_build(['action' => get_setting('bank_system_action_name')])
+            );
+            break;
+    }
+
+    return $hook_parameters;
 }
