@@ -70,8 +70,20 @@ A setup that meets the following requirements is necessary to use this plugin.
    │ │ │ │ │ ├── settings
    │ │ │ │ │ │ ├── bank_system.json
    │ │ │ │ │ ├── templates
+   │ │ │ │ │ │ ├── css.html
    │ │ │ │ │ │ ├── home_table_transactions.html
    │ │ │ │ │ │ ├── home_table_transactions_row.html
+   │ │ │ │ │ │ ├── home_user_details.html
+   │ │ │ │ │ │ ├── page_button_investment.html
+   │ │ │ │ │ │ ├── page_button_transaction.html
+   │ │ │ │ │ │ ├── page_investment.html
+   │ │ │ │ │ │ ├── page_investment_confirm.html
+   │ │ │ │ │ │ ├── page_table_transactions.html
+   │ │ │ │ │ │ ├── page_table_transactions_empty.html
+   │ │ │ │ │ │ ├── page_table_transactions_row.html
+   │ │ │ │ │ │ ├── page_table_transactions_row_options_cancel.html
+   │ │ │ │ │ │ ├── page_transaction.html
+   │ │ │ │ │ │ ├── page_transaction_confirm.html
    │ │ │ │ │ ├── admin.php
    │ │ │ │ │ ├── core.php
    │ │ │ │ ├── newpoints_bank_system.php
@@ -104,8 +116,6 @@ The following template modifications are required to use this plugin.
 1. Open template `newpoints_home` and add `{$newpoints_bank_details}` after `{$latest_transactions}` to display the bank
    user details.
 
-```html
-
 [Go up to Table of Contents](#table_of_contents)
 
 ## 🛠 Settings <a name = "settings"></a>
@@ -123,9 +133,33 @@ Below you can find a description of the plugin settings.
 
 The following is a list of templates available for this plugin.
 
+- `newpoints_bank_system_css`
+    - _front end_;
+- `newpoints_bank_system_home_table_transactions`
+    - _front end_;
+- `newpoints_bank_system_home_table_transactions_row`
+    - _front end_;
+- `newpoints_bank_system_home_user_details`
+    - _front end_;
+- `newpoints_bank_system_page_button_investment`
+    - _front end_;
+- `newpoints_bank_system_page_button_transaction`
+    - _front end_;
+- `newpoints_bank_system_page_investment`
+    - _front end_;
+- `newpoints_bank_system_page_investment_confirm`
+    - _front end_;
 - `newpoints_bank_system_page_table_transactions`
     - _front end_;
+- `newpoints_bank_system_page_table_transactions_empty`
+    - _front end_;
 - `newpoints_bank_system_page_table_transactions_row`
+    - _front end_;
+- `newpoints_bank_system_page_table_transactions_row_options_cancel`
+    - _front end_;
+- `newpoints_bank_system_page_transaction`
+    - _front end_;
+- `newpoints_bank_system_page_transaction_confirm`
     - _front end_;
 
 [Go up to Table of Contents](#table_of_contents)
