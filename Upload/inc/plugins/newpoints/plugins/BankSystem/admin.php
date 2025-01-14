@@ -283,7 +283,7 @@ function plugin_activation(): bool
     }
 
     if ($db->field_exists('newpoints_bank_system_withdraw', 'usergroups') &&
-        !$db->field_exists('newpoints_bank_system_withdraw', 'usergroups')) {
+        !$db->field_exists('newpoints_rate_bank_system_withdraw', 'usergroups')) {
         $db->rename_column(
             'usergroups',
             'newpoints_bank_system_withdraw',
@@ -293,7 +293,7 @@ function plugin_activation(): bool
     }
 
     if ($db->field_exists('newpoints_bank_system_interest', 'usergroups') &&
-        !$db->field_exists('newpoints_bank_system_interest', 'usergroups')) {
+        !$db->field_exists('newpoints_rate_bank_system_interest', 'usergroups')) {
         $db->rename_column(
             'usergroups',
             'newpoints_bank_system_interest',

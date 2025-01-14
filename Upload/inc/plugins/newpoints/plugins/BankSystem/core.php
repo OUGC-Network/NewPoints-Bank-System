@@ -280,7 +280,7 @@ function execute_task(): bool
 
         $transaction_points = (float)$transaction_data['transaction_points'];
 
-        $interest_rate = (float)$user_group_permissions['newpoints_bank_system_interest'];
+        $interest_rate = (float)$user_group_permissions['newpoints_rate_bank_system_interest'];
 
         $interest_period = (float)$user_group_permissions['newpoints_bank_system_interest_period'];
 

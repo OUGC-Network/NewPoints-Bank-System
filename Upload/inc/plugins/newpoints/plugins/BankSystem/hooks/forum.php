@@ -128,7 +128,7 @@ function newpoints_home_end(): bool
 
         language_load('bank_system');
 
-        $user_interest_rate = my_number_format(($mybb->usergroup['newpoints_bank_system_interest']) / 100);
+        $user_interest_rate = my_number_format(($mybb->usergroup['newpoints_rate_bank_system_interest']) / 100);
 
         $user_interest_period = my_number_format($mybb->usergroup['newpoints_bank_system_interest_period']);
 
