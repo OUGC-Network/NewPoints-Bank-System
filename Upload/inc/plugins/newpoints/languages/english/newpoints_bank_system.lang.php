@@ -49,7 +49,8 @@ $l = [
 
     'newpoints_bank_system_page_title' => 'Bank',
 
-    'newpoints_bank_system_page_balance' => 'Balance',
+    'newpoints_bank_system_page_user_points' => 'User',
+    'newpoints_bank_system_page_balance' => 'Bank Balance',
     'newpoints_bank_system_page_balance_investment' => 'Investment Balance',
 
     'newpoints_bank_system_page_user_interest' => 'Interest Rate',

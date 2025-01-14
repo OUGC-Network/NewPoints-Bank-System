@@ -373,7 +373,7 @@ function newpoints_terminate(): bool
     }
 
     global $db, $lang, $theme, $header, $templates, $headerinclude, $footer;
-    global $newpoints_file, $newpoints_menu, $newpoints_errors, $newpoints_pagination, $newpoints_additional;
+    global $newpoints_file, $newpoints_menu, $newpoints_errors, $newpoints_pagination, $newpoints_additional, $newpoints_user_balance_formatted;
 
     $url_params = ['action' => $action_name];
 
