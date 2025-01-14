@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace Newpoints\BankSystem\Admin;
 
+use function Newpoints\Admin\db_build_field_definition;
 use function Newpoints\Admin\db_drop_columns;
 use function Newpoints\Admin\db_verify_columns;
 use function Newpoints\Admin\db_verify_columns_exists;
@@ -68,6 +69,12 @@ const TABLES_DATA = [
             'default' => 0
         ],
         'transaction_points' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => '16,2',
+            'default' => 0
+        ],
+        'transaction_fee' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
             'size' => '16,2',
@@ -175,31 +182,28 @@ const FIELDS_DATA = [
                 'step' => 0.01,
             ]
         ],
-        'newpoints_bank_system_deposit' => [
-            'type' => 'DECIMAL',
-            'unsigned' => true,
-            'size' => '16,2',
-            'default' => 1.01,
-            'formType' => 'numericField',
-            'formOptions' => [
-                //'min' => 0,
-                'step' => 0.01,
-            ]
-        ],
-        'newpoints_bank_system_withdraw' => [
+        'newpoints_rate_bank_system_deposit' => [
             'type' => 'INT',
             'unsigned' => true,
-            'default' => 1,
+            'default' => 0,
             'formType' => 'numericField',
             'formOptions' => [
-                //'min' => 0,
-                'step' => 0.01,
+                'max' => 100,
             ]
         ],
-        'newpoints_bank_system_interest' => [
+        'newpoints_rate_bank_system_withdraw' => [
             'type' => 'INT',
             'unsigned' => true,
-            'default' => 1,
+            'default' => 0,
+            'formType' => 'numericField',
+            'formOptions' => [
+                'max' => 100,
+            ]
+        ],
+        'newpoints_rate_bank_system_interest' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0,
             'formType' => 'numericField',
             'formOptions' => [
                 'max' => 100,
@@ -252,7 +256,7 @@ function plugin_information(): array
 
 function plugin_activation(): bool
 {
-    global $lang;
+    global $db, $lang;
 
     language_load('bank_system');
 
@@ -267,6 +271,36 @@ function plugin_activation(): bool
     $new_version = (int)plugin_information()['versioncode'];
 
     /*~*~* RUN UPDATES START *~*~*/
+
+    if ($db->field_exists('newpoints_bank_system_deposit', 'usergroups') &&
+        !$db->field_exists('newpoints_rate_bank_system_deposit', 'usergroups')) {
+        $db->rename_column(
+            'usergroups',
+            'newpoints_bank_system_deposit',
+            'newpoints_rate_bank_system_deposit',
+            db_build_field_definition(FIELDS_DATA['usergroups']['newpoints_rate_bank_system_deposit'])
+        );
+    }
+
+    if ($db->field_exists('newpoints_bank_system_withdraw', 'usergroups') &&
+        !$db->field_exists('newpoints_bank_system_withdraw', 'usergroups')) {
+        $db->rename_column(
+            'usergroups',
+            'newpoints_bank_system_withdraw',
+            'newpoints_rate_bank_system_withdraw',
+            db_build_field_definition(FIELDS_DATA['usergroups']['newpoints_rate_bank_system_withdraw'])
+        );
+    }
+
+    if ($db->field_exists('newpoints_bank_system_interest', 'usergroups') &&
+        !$db->field_exists('newpoints_bank_system_interest', 'usergroups')) {
+        $db->rename_column(
+            'usergroups',
+            'newpoints_bank_system_interest',
+            'newpoints_rate_bank_system_interest',
+            db_build_field_definition(FIELDS_DATA['usergroups']['newpoints_rate_bank_system_interest'])
+        );
+    }
 
     /*~*~* RUN UPDATES END *~*~*/
 

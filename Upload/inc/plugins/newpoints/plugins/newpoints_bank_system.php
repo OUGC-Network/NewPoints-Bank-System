@@ -83,9 +83,13 @@ function newpoints_bank_system_is_installed(): bool
 (function () {
     global $groupzerolesser, $grouppermbyswitch;
 
-    $groupzerolesser[] = 'newpoints_bank_system_withdraw';
+    $groupzerolesser[] = 'newpoints_rate_bank_system_deposit';
 
-    $grouppermbyswitch['newpoints_bank_system_withdraw'] = 'newpoints_bank_system_can_view';
+    $grouppermbyswitch['newpoints_rate_bank_system_deposit'] = 'newpoints_bank_system_can_view';
+
+    $groupzerolesser[] = 'newpoints_rate_bank_system_withdraw';
+
+    $grouppermbyswitch['newpoints_rate_bank_system_withdraw'] = 'newpoints_rate_bank_system_withdraw';
 
     // the following is so days has priority over weeks, and weeks over months
     $groupzerolesser[] = 'newpoints_bank_system_interest_period_type';

@@ -98,6 +98,7 @@ function execute_task(): bool
         'user_id',
         'transaction_type',
         'transaction_points',
+        'transaction_fee',
         'investment_stamp',
         'complete_status',
     ], ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]);
@@ -115,10 +116,12 @@ function execute_task(): bool
 
         $transaction_points = (float)$transaction_data['transaction_points'];
 
+        $transaction_fee = (float)$transaction_data['transaction_fee'];
+
         if ($complete_status === $complete_status_new) {
             if ($transaction_type === TRANSACTION_TYPE_DEPOSIT) {
-                if ($user_data['newpoints'] >= $transaction_points) {
-                    points_subtract($user_id, $transaction_points);
+                if ($user_data['newpoints'] >= $transaction_points + $transaction_fee) {
+                    points_subtract($user_id, $transaction_points + $transaction_fee);
 
                     transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
 
@@ -127,8 +130,8 @@ function execute_task(): bool
                     transaction_update(['transaction_status' => $transaction_status_no_funds], $transaction_id);
                 }
             } elseif ($transaction_type === TRANSACTION_TYPE_INVESTMENT) {
-                if ($user_data['newpoints'] >= $transaction_points) {
-                    points_subtract($user_id, $transaction_points);
+                if ($user_data['newpoints'] >= $transaction_points + $transaction_fee) {
+                    points_subtract($user_id, $transaction_points + $transaction_fee);
 
                     transaction_update([
                         'complete_status' => $complete_status_processed,
@@ -141,8 +144,10 @@ function execute_task(): bool
                     transaction_update(['transaction_status' => $transaction_status_no_funds], $transaction_id);
                 }
             } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
-                if ($user_data['newpoints_bank'] >= $transaction_points) {
+                if ($user_data['newpoints_bank'] >= $transaction_points && $user_data['newpoints'] >= $transaction_fee) {
                     points_add_simple($user_id, $transaction_points);
+
+                    points_subtract($user_id, $transaction_fee);
 
                     transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
 
@@ -167,6 +172,20 @@ function execute_task(): bool
                     LOGGING_TYPE_CHARGE
                 );
 
+                if ($transaction_fee) {
+                    log_add(
+                        'bank_system_deposit_fee',
+                        '',
+                        $user_data['username'] ?? '',
+                        $user_id,
+                        $transaction_fee,
+                        $transaction_id,
+                        0,
+                        0,
+                        LOGGING_TYPE_CHARGE
+                    );
+                }
+
                 transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
             } elseif ($transaction_type === TRANSACTION_TYPE_INVESTMENT) {
                 log_add(
@@ -181,6 +200,20 @@ function execute_task(): bool
                     LOGGING_TYPE_CHARGE
                 );
 
+                if ($transaction_fee) {
+                    log_add(
+                        'bank_system_investment_fee',
+                        '',
+                        $user_data['username'] ?? '',
+                        $user_id,
+                        $transaction_fee,
+                        $transaction_id,
+                        0,
+                        0,
+                        LOGGING_TYPE_CHARGE
+                    );
+                }
+
                 transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
             } elseif ($transaction_type === TRANSACTION_TYPE_WITHDRAW) {
                 log_add(
@@ -194,6 +227,20 @@ function execute_task(): bool
                     0,
                     LOGGING_TYPE_INCOME
                 );
+
+                if ($transaction_fee) {
+                    log_add(
+                        'bank_system_withdraw_fee',
+                        '',
+                        $user_data['username'] ?? '',
+                        $user_id,
+                        $transaction_fee,
+                        $transaction_id,
+                        0,
+                        0,
+                        LOGGING_TYPE_CHARGE
+                    );
+                }
 
                 transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
             }
@@ -459,6 +506,10 @@ function transaction_insert(array $transaction_data, bool $is_update = false, in
 
     if (isset($transaction_data['transaction_points'])) {
         $insert_data['transaction_points'] = (float)$transaction_data['transaction_points'];
+    }
+
+    if (isset($transaction_data['transaction_fee'])) {
+        $insert_data['transaction_fee'] = (float)$transaction_data['transaction_fee'];
     }
 
     if (isset($transaction_data['transaction_stamp'])) {

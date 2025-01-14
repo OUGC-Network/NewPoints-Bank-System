@@ -61,9 +61,14 @@ use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_NO_FUNDS;
 use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_DEPOSIT;
 use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_INVESTMENT;
 use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_WITHDRAW;
+use const Newpoints\Core\DEBUG;
 
 function newpoints_global_start(array &$hook_arguments): array
 {
+    if (DEBUG) {
+        execute_task();
+    }
+
     $hook_arguments['newpoints.php'] = array_merge($hook_arguments['newpoints.php'], [
         'newpoints_bank_system_page_table_transactions_row',
         'newpoints_bank_system_page_table_transactions_row_options_cancel',
@@ -243,8 +248,11 @@ function newpoints_logs_log_row(): bool
 
     if (!in_array($log_data['action'], [
         'bank_system_deposit',
+        'bank_system_deposit_fee',
         'bank_system_investment',
+        'bank_system_investment_fee',
         'bank_system_withdraw',
+        'bank_system_withdraw_fee',
         'bank_system_interest_profit',
         'bank_system_investment_cancel',
     ])) {
@@ -260,12 +268,24 @@ function newpoints_logs_log_row(): bool
         $log_action = $lang->newpoints_signature_market_page_logs_bank_system_deposit;
     }
 
+    if ($log_data['action'] === 'bank_system_deposit_fee') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_deposit_fee;
+    }
+
     if ($log_data['action'] === 'bank_system_investment') {
         $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment;
     }
 
+    if ($log_data['action'] === 'bank_system_investment_fee') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment_fee;
+    }
+
     if ($log_data['action'] === 'bank_system_withdraw') {
         $log_action = $lang->newpoints_signature_market_page_logs_bank_system_withdraw;
+    }
+
+    if ($log_data['action'] === 'bank_system_withdraw_fee') {
+        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_withdraw_fee;
     }
 
     if ($log_data['action'] === 'bank_system_interest_profit') {
@@ -306,12 +326,24 @@ function newpoints_logs_end(): bool
             $action_type = $lang->newpoints_signature_market_page_logs_bank_system_deposit;
         }
 
+        if ($key === 'bank_system_deposit_fee') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_deposit_fee;
+        }
+
         if ($key === 'bank_system_investment') {
             $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment;
         }
 
+        if ($key === 'bank_system_investment_fee') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment_fee;
+        }
+
         if ($key === 'bank_system_withdraw') {
             $action_type = $lang->newpoints_signature_market_page_logs_bank_system_withdraw;
+        }
+
+        if ($key === 'bank_system_withdraw_fee') {
+            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_withdraw_fee;
         }
 
         if ($key === 'bank_system_interest_profit') {
@@ -471,6 +503,24 @@ function newpoints_terminate(): bool
             $optionDisabledSelectedElementWithdraw = 'selected="selected"';
         }
 
+        $transaction_rate_deposit = (float)$mybb->usergroup['newpoints_rate_bank_system_deposit'];
+
+        $transaction_rate_withdraw = (float)$mybb->usergroup['newpoints_rate_bank_system_withdraw'];
+
+        $transaction_rate_text = $lang->sprintf(
+            $lang->newpoints_bank_system_page_transaction_rate_deposit,
+            my_number_format($transaction_rate_deposit)
+        );
+
+        $transaction_rate_deposit_text = eval(templates_get('page_transaction_rate'));
+
+        $transaction_rate_text = $lang->sprintf(
+            $lang->newpoints_bank_system_page_transaction_rate_withdraw,
+            my_number_format($transaction_rate_withdraw)
+        );
+
+        $transaction_rate_withdraw_text = eval(templates_get('page_transaction_rate'));
+
         if ($mybb->request_method === 'post') {
             verify_post_check($mybb->get_input('my_post_key'));
 
@@ -481,11 +531,16 @@ function newpoints_terminate(): bool
                 'user_id' => $current_user_id,
                 'transaction_type' => $transaction_type,
                 'transaction_points' => $transaction_points,
+                'transaction_fee' => 0
             ];
 
             $errors = [];
 
             if ($insert_data['transaction_type'] === TRANSACTION_TYPE_DEPOSIT) {
+                if ($transaction_rate_deposit > 0) {
+                    $insert_data['transaction_fee'] = $insert_data['transaction_points'] * ($transaction_rate_deposit / 100);
+                }
+
                 if (empty($mybb->usergroup['newpoints_bank_system_can_deposit'])) {
                     $errors[] = $lang->newpoints_bank_system_error_transaction_no_permission_deposit;
                 }
@@ -494,10 +549,13 @@ function newpoints_terminate(): bool
                     $errors[] = $lang->newpoints_bank_system_error_transaction_minimum_points_deposit;
                 }
 
-                if ($insert_data['transaction_points'] > $mybb->user['newpoints']) {
+                if ($insert_data['transaction_points'] + $insert_data['transaction_fee'] > $mybb->user['newpoints']) {
                     $errors[] = $lang->newpoints_bank_system_error_transaction_no_enough_points_deposit;
                 }
             } else {
+                if ($transaction_rate_withdraw > 0) {
+                    $insert_data['transaction_fee'] = $insert_data['transaction_points'] * ($transaction_rate_withdraw / 100);
+                }
                 if (empty($mybb->usergroup['newpoints_bank_system_can_withdraw'])) {
                     $errors[] = $lang->newpoints_bank_system_error_transaction_no_permission_deposit;
                 }
@@ -508,6 +566,10 @@ function newpoints_terminate(): bool
 
                 if ($insert_data['transaction_points'] > $mybb->user['newpoints_bank']) {
                     $errors[] = $lang->newpoints_bank_system_error_transaction_no_enough_points_withdraw;
+                }
+
+                if ($insert_data['transaction_fee'] > $mybb->user['newpoints']) {
+                    $errors[] = $lang->newpoints_bank_system_error_transaction_no_enough_points_withdraw_fee;
                 }
             }
 
@@ -586,6 +648,15 @@ function newpoints_terminate(): bool
             $investment_type = $investment_type_not_recurring;
         }
 
+        $transaction_rate_deposit = (float)$mybb->usergroup['newpoints_rate_bank_system_deposit'];
+
+        $transaction_rate_text = $lang->sprintf(
+            $lang->newpoints_bank_system_page_transaction_rate_deposit,
+            my_number_format($transaction_rate_deposit)
+        );
+
+        $transaction_rate_deposit_text = eval(templates_get('page_transaction_rate'));
+
         if ($mybb->request_method === 'post') {
             verify_post_check($mybb->get_input('my_post_key'));
 
@@ -596,17 +667,21 @@ function newpoints_terminate(): bool
                 'user_id' => $current_user_id,
                 'transaction_type' => $transaction_type,
                 'transaction_points' => $transaction_points,
-                'investment_type' => $investment_type
+                'investment_type' => $investment_type,
+                'transaction_fee' => 0
             ];
 
             $errors = [];
+            if ($transaction_rate_deposit > 0) {
+                $insert_data['transaction_fee'] = $insert_data['transaction_points'] * ($transaction_rate_deposit / 100);
+            }
 
             if ($insert_data['transaction_points'] < $mybb->usergroup['newpoints_bank_system_minimum_deposit']) {
                 $errors[] = $lang->newpoints_bank_system_error_transaction_minimum_points_deposit;
             }
 
-            if ($insert_data['transaction_points'] > $mybb->user['newpoints']) {
-                $errors[] = $lang->newpoints_bank_system_error_transaction_no_enough_points_deposit;
+            if ($insert_data['transaction_points'] + $insert_data['transaction_fee'] > $mybb->user['newpoints']) {
+                $errors[] = $lang->newpoints_bank_system_error_transaction_no_enough_points_investment;
             }
 
             $confirm_transaction = empty($errors) && $confirm_transaction;

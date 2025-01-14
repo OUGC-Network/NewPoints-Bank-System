@@ -96,6 +96,8 @@ $l = [
     'newpoints_bank_system_page_transaction_type_withdraw' => 'Withdraw',
     'newpoints_bank_system_page_transaction_points' => 'Points Amount',
     'newpoints_bank_system_page_transaction_confirm' => 'Confirm transaction.',
+    'newpoints_bank_system_page_transaction_rate_deposit' => 'Deposit rate: {1}%',
+    'newpoints_bank_system_page_transaction_rate_withdraw' => 'Withdraw rate: {1}%',
 
     'newpoints_bank_system_page_confirm_transaction_title' => 'Confirm Transaction',
     'newpoints_bank_system_page_confirm_transaction_description' => 'Are you sure you want to create the selected account transaction?',
@@ -123,6 +125,7 @@ $l = [
     'newpoints_bank_system_error_transaction_no_enough_points_deposit' => 'You have no enough points to deposit points to your bank account.',
     'newpoints_bank_system_error_transaction_no_enough_points_investment' => 'You have no enough points to invest points in your bank account.',
     'newpoints_bank_system_error_transaction_no_enough_points_withdraw' => 'You have no enough funds to withdraw points from your bank account.',
+    'newpoints_bank_system_error_transaction_no_enough_points_withdraw_fee' => 'You have no enough points for the withdraw fee.',
     'newpoints_bank_system_error_transaction_no_permission_deposit' => 'You are not allowed to deposit points to your bank account.',
     'newpoints_bank_system_error_transaction_no_permission_withdraw' => 'You are not allowed to withdraw points from your bank account.',
     'newpoints_bank_system_error_transaction_minimum_points_deposit' => 'The minimum amount of points to deposit to your bank account is {1}.',
@@ -131,8 +134,11 @@ $l = [
     'newpoints_bank_system_wol_location' => 'Viewing <a href="{1}/{2}">Bank</a> page.',
 
     'newpoints_signature_market_page_logs_bank_system_deposit' => 'Bank Deposit',
+    'newpoints_signature_market_page_logs_bank_system_deposit_fee' => 'Bank Deposit Fee',
     'newpoints_signature_market_page_logs_bank_system_investment' => 'Bank Investment',
+    'newpoints_signature_market_page_logs_bank_system_investment_fee' => 'Bank Investment Fee',
     'newpoints_signature_market_page_logs_bank_system_withdraw' => 'Bank Withdraw',
+    'newpoints_signature_market_page_logs_bank_system_withdraw_fee' => 'Bank Withdraw Fee',
     'newpoints_signature_market_page_logs_bank_system_interest_profit' => 'Bank Interest Profit',
     'newpoints_signature_market_page_logs_bank_system_investment_cancel' => 'Bank Investment Cancel',
 
