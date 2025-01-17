@@ -794,7 +794,8 @@ function newpoints_terminate(): bool
 
                 $investment_type = $investment_stamp = $investment_execution_stamp = $transaction_options = '-';
 
-                if ((int)$transaction_data['transaction_type'] === TRANSACTION_TYPE_INVESTMENT && (int)$transaction_data['transaction_status'] === $transaction_status_live) {
+                if ((int)$transaction_data['transaction_type'] === TRANSACTION_TYPE_INVESTMENT &&
+                    (int)$transaction_data['transaction_status'] === $transaction_status_live) {
                     switch ($transaction_data['investment_type']) {
                         case TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING:
                             $investment_type = $lang->newpoints_bank_system_page_table_transactions_investment_type_not_recurring;

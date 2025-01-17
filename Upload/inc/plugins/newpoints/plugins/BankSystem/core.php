@@ -518,8 +518,16 @@ function transaction_insert(array $transaction_data, bool $is_update = false, in
         $insert_data['transaction_stamp'] = TIME_NOW;
     }
 
+    if (isset($transaction_data['investment_type'])) {
+        $insert_data['investment_type'] = (int)$transaction_data['investment_type'];
+    }
+
     if (isset($transaction_data['investment_stamp'])) {
         $insert_data['investment_stamp'] = (int)$transaction_data['investment_stamp'];
+    }
+
+    if (isset($transaction_data['investment_execution_stamp'])) {
+        $insert_data['investment_execution_stamp'] = (int)$transaction_data['investment_execution_stamp'];
     }
 
     if (isset($transaction_data['transaction_status'])) {
