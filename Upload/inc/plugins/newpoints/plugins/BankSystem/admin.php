@@ -247,9 +247,9 @@ function plugin_information(): array
         'website' => 'https://ougc.network',
         'author' => 'Omar G.',
         'authorsite' => 'https://ougc.network',
-        'version' => '3.2.0',
-        'versioncode' => 3200,
-        'compatibility' => '32*',
+        'version' => '3.1.0',
+        'versioncode' => 3100,
+        'compatibility' => '31*',
         'codename' => 'newpoints_bank_system'
     ];
 }
