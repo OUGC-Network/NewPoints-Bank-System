@@ -52,9 +52,9 @@ $l = [
     'newpoints_user_groups_bank_system_minimum_deposit' => 'Minimum Points Per Deposit<br /><small class="input">Minimum amount of points that can be deposited to the bank system.</small><br />',
     'newpoints_user_groups_bank_system_minimum_withdraw' => 'Minimum Points Per Withdraw<br /><small class="input">Minimum amount of points that can be withdrew from the bank system.</small><br />',
 
-    'newpoints_user_groups_rate_bank_system_deposit' => 'Bank Deposit Rate Percentage <br /><small class="input">The rate for depositing points in the bank system. Default is <code>1</code>.</small><br />',
-    'newpoints_user_groups_rate_bank_system_withdraw' => 'Bank Withdraw Rate Percentage <br /><small class="input">The rate for withdrawing points from the bank system. Default is <code>1</code>.</small><br />',
-    'newpoints_user_groups_rate_bank_system_interest' => 'Bank Interest Rate Percentage <br /><small class="input">The rate for withdrawing points from the bank system. Default is <code>1</code>.</small><br />',
+    'newpoints_user_groups_rate_bank_system_deposit' => 'Bank Deposit Rate Percentage <br /><small class="input">The rate for depositing points in the bank system. Default is <code>0</code>.</small><br />',
+    'newpoints_user_groups_rate_bank_system_withdraw' => 'Bank Withdraw Rate Percentage <br /><small class="input">The rate for withdrawing points from the bank system. Default is <code>0</code>.</small><br />',
+    'newpoints_user_groups_rate_bank_system_interest' => 'Bank Interest Rate Percentage <br /><small class="input">The rate for withdrawing points from the bank system. Default is <code>0</code>.</small><br />',
     'newpoints_user_groups_bank_system_interest_period' => 'Bank Interest Period<br /><small class="input">The amount of days, weeks, or months for generating interests in the bank system. Default is <code>1</code>.</small><br />',
     'newpoints_user_groups_bank_system_interest_period_type' => 'Bank Interest Period Type<br /><small class="input">The period span type for users to generate generate interests in the bank system. Default is <code>Days</code> for generating interests daily.</small><br />',
     'newpoints_user_groups_bank_system_interest_limit' => 'Bank Interest Profit Limit<br /><small class="input">The maximum amount of points users can generate from interests in the bank system. Default is <code>0</code> for no limit.</small><br />',

@@ -183,7 +183,7 @@ const FIELDS_DATA = [
             ]
         ],
         'newpoints_rate_bank_system_deposit' => [
-            'type' => 'INT',
+            'type' => 'TINYINT',
             'unsigned' => true,
             'default' => 0,
             'formType' => 'numericField',
@@ -192,7 +192,7 @@ const FIELDS_DATA = [
             ]
         ],
         'newpoints_rate_bank_system_withdraw' => [
-            'type' => 'INT',
+            'type' => 'TINYINT',
             'unsigned' => true,
             'default' => 0,
             'formType' => 'numericField',
@@ -201,7 +201,7 @@ const FIELDS_DATA = [
             ]
         ],
         'newpoints_rate_bank_system_interest' => [
-            'type' => 'INT',
+            'type' => 'TINYINT',
             'unsigned' => true,
             'default' => 0,
             'formType' => 'numericField',
