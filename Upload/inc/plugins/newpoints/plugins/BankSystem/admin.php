@@ -49,6 +49,7 @@ use function Newpoints\Core\task_delete;
 
 use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
 use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_WEEK;
+use const Newpoints\DECIMAL_DATA_TYPE_SIZE;
 
 const TABLES_DATA = [
     'newpoints_bank_system_transactions' => [
@@ -71,13 +72,13 @@ const TABLES_DATA = [
         'transaction_points' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 0
         ],
         'transaction_fee' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 0
         ],
         'transaction_stamp' => [
@@ -118,20 +119,20 @@ const FIELDS_DATA = [
     'users' => [
         'newpoints_bank' => [
             'type' => 'DECIMAL',
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 0,
             'formType' => 'numericField',
             'formOptions' => [
-                'step' => 0.01,
+                'step' => 0.0001,
             ]
         ],
         'newpoints_bank_investment' => [
             'type' => 'DECIMAL',
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 0,
             'formType' => 'numericField',
             'formOptions' => [
-                'step' => 0.01,
+                'step' => 0.0001,
             ]
         ],
     ],
@@ -163,23 +164,23 @@ const FIELDS_DATA = [
         'newpoints_bank_system_minimum_deposit' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 1,
             'formType' => 'numericField',
             'formOptions' => [
                 'min' => 1,
-                'step' => 0.01,
+                'step' => 0.0001,
             ]
         ],
         'newpoints_bank_system_minimum_withdraw' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 1,
             'formType' => 'numericField',
             'formOptions' => [
                 'min' => 1,
-                'step' => 0.01,
+                'step' => 0.0001,
             ]
         ],
         'newpoints_rate_bank_system_deposit' => [
@@ -224,12 +225,12 @@ const FIELDS_DATA = [
         ],
         'newpoints_bank_system_interest_limit' => [
             'type' => 'DECIMAL',
-            'size' => '16,2',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
             'default' => 0,
             'formType' => 'numericField',
             'formOptions' => [
                 //'min' => 0,
-                'step' => 0.01,
+                'step' => 0.0001,
             ]
         ],
     ]
