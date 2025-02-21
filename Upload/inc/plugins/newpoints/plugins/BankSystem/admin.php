@@ -28,28 +28,28 @@
 
 declare(strict_types=1);
 
-namespace Newpoints\BankSystem\Admin;
+namespace NewPoints\BankSystem\Admin;
 
-use function Newpoints\Admin\db_build_field_definition;
-use function Newpoints\Admin\db_drop_columns;
-use function Newpoints\Admin\db_verify_columns;
-use function Newpoints\Admin\db_verify_columns_exists;
-use function Newpoints\Admin\db_verify_tables;
-use function Newpoints\Admin\db_verify_tables_exists;
-use function Newpoints\Core\language_load;
-use function Newpoints\Core\log_remove;
-use function Newpoints\Core\plugins_version_delete;
-use function Newpoints\Core\plugins_version_get;
-use function Newpoints\Core\plugins_version_update;
-use function Newpoints\Core\settings_remove;
-use function Newpoints\Core\templates_remove;
-use function Newpoints\Core\task_enable;
-use function Newpoints\Core\task_disable;
-use function Newpoints\Core\task_delete;
+use function NewPoints\Admin\db_build_field_definition;
+use function NewPoints\Admin\db_drop_columns;
+use function NewPoints\Admin\db_verify_columns;
+use function NewPoints\Admin\db_verify_columns_exists;
+use function NewPoints\Admin\db_verify_tables;
+use function NewPoints\Admin\db_verify_tables_exists;
+use function NewPoints\Core\language_load;
+use function NewPoints\Core\log_remove;
+use function NewPoints\Core\plugins_version_delete;
+use function NewPoints\Core\plugins_version_get;
+use function NewPoints\Core\plugins_version_update;
+use function NewPoints\Core\settings_remove;
+use function NewPoints\Core\templates_remove;
+use function NewPoints\Core\task_enable;
+use function NewPoints\Core\task_disable;
+use function NewPoints\Core\task_delete;
 
-use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
-use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_WEEK;
-use const Newpoints\DECIMAL_DATA_TYPE_SIZE;
+use const NewPoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
+use const NewPoints\BankSystem\Core\INTEREST_PERIOD_TYPE_WEEK;
+use const NewPoints\DECIMAL_DATA_TYPE_SIZE;
 
 const TABLES_DATA = [
     'newpoints_bank_system_transactions' => [
@@ -221,7 +221,7 @@ const FIELDS_DATA = [
             'unsigned' => true,
             'default' => 0,
             'formType' => 'selectField',
-            'formFunction' => '\Newpoints\BankSystem\Admin\options_list_interest_period_type'
+            'formFunction' => '\NewPoints\BankSystem\Admin\options_list_interest_period_type'
         ],
         'newpoints_bank_system_interest_limit' => [
             'type' => 'DECIMAL',

@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-use function Newpoints\BankSystem\Core\execute_task;
+use function NewPoints\BankSystem\Core\execute_task;
 
 function task_newpoints_bank_system(array $task_data): array
 {

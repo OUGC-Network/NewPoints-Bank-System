@@ -28,12 +28,12 @@
 
 declare(strict_types=1);
 
-namespace Newpoints\BankSystem\Hooks\Admin;
+namespace NewPoints\BankSystem\Hooks\Admin;
 
-use function Newpoints\Core\language_load;
+use function NewPoints\Core\language_load;
 
-use const Newpoints\BankSystem\Admin\FIELDS_DATA;
-use const Newpoints\BankSystem\ROOT;
+use const NewPoints\BankSystem\Admin\FIELDS_DATA;
+use const NewPoints\BankSystem\ROOT;
 
 function newpoints_settings_rebuild_start(array &$hook_arguments): array
 {

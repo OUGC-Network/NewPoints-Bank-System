@@ -28,19 +28,19 @@
 
 declare(strict_types=1);
 
-use function Newpoints\BankSystem\Admin\plugin_information;
-use function Newpoints\BankSystem\Admin\plugin_activation;
-use function Newpoints\BankSystem\Admin\plugin_deactivation;
-use function Newpoints\BankSystem\Admin\plugin_is_installed;
-use function Newpoints\BankSystem\Admin\plugin_uninstallation;
-use function Newpoints\Core\add_hooks;
+use function NewPoints\BankSystem\Admin\plugin_information;
+use function NewPoints\BankSystem\Admin\plugin_activation;
+use function NewPoints\BankSystem\Admin\plugin_deactivation;
+use function NewPoints\BankSystem\Admin\plugin_is_installed;
+use function NewPoints\BankSystem\Admin\plugin_uninstallation;
+use function NewPoints\Core\add_hooks;
 
-use const Newpoints\BankSystem\ROOT;
-use const Newpoints\ROOT_PLUGINS;
+use const NewPoints\BankSystem\ROOT;
+use const NewPoints\ROOT_PLUGINS;
 
 defined('IN_MYBB') || die('Direct initialization of this file is not allowed.');
 
-define('Newpoints\BankSystem\ROOT', ROOT_PLUGINS . '/BankSystem');
+define('NewPoints\BankSystem\ROOT', ROOT_PLUGINS . '/BankSystem');
 
 require_once ROOT . '/core.php';
 
@@ -48,11 +48,11 @@ if (defined('IN_ADMINCP')) {
     require_once ROOT . '/admin.php';
     require_once ROOT . '/hooks/admin.php';
 
-    add_hooks('Newpoints\BankSystem\Hooks\Admin');
+    add_hooks('NewPoints\BankSystem\Hooks\Admin');
 } else {
     require_once ROOT . '/hooks/forum.php';
 
-    add_hooks('Newpoints\BankSystem\Hooks\Forum');
+    add_hooks('NewPoints\BankSystem\Hooks\Forum');
 }
 
 function newpoints_bank_system_info(): array

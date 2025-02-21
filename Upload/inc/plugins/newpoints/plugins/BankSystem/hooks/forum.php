@@ -28,40 +28,40 @@
 
 declare(strict_types=1);
 
-namespace Newpoints\BankSystem\Hooks\Forum;
+namespace NewPoints\BankSystem\Hooks\Forum;
 
 use MyBB;
 
-use function Newpoints\BankSystem\Core\can_create_investment;
-use function Newpoints\BankSystem\Core\can_create_transaction;
-use function Newpoints\BankSystem\Core\can_manage;
-use function Newpoints\BankSystem\Core\execute_task;
-use function Newpoints\BankSystem\Core\transaction_get;
-use function Newpoints\BankSystem\Core\transaction_get_multiple;
-use function Newpoints\BankSystem\Core\transaction_insert;
-use function Newpoints\BankSystem\Core\transaction_update;
-use function Newpoints\BankSystem\Core\templates_get;
-use function Newpoints\Core\get_setting;
-use function Newpoints\Core\language_load;
-use function Newpoints\Core\main_file_name;
-use function Newpoints\Core\page_build_cancel_confirmation;
-use function Newpoints\Core\page_build_purchase_confirmation;
-use function Newpoints\Core\points_format;
-use function Newpoints\Core\url_handler_build;
+use function NewPoints\BankSystem\Core\can_create_investment;
+use function NewPoints\BankSystem\Core\can_create_transaction;
+use function NewPoints\BankSystem\Core\can_manage;
+use function NewPoints\BankSystem\Core\execute_task;
+use function NewPoints\BankSystem\Core\transaction_get;
+use function NewPoints\BankSystem\Core\transaction_get_multiple;
+use function NewPoints\BankSystem\Core\transaction_insert;
+use function NewPoints\BankSystem\Core\transaction_update;
+use function NewPoints\BankSystem\Core\templates_get;
+use function NewPoints\Core\get_setting;
+use function NewPoints\Core\language_load;
+use function NewPoints\Core\main_file_name;
+use function NewPoints\Core\page_build_cancel_confirmation;
+use function NewPoints\Core\page_build_purchase_confirmation;
+use function NewPoints\Core\points_format;
+use function NewPoints\Core\url_handler_build;
 
-use const Newpoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
-use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_LOGGED;
-use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_NEW;
-use const Newpoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_PROCESSED;
-use const Newpoints\BankSystem\Core\TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING;
-use const Newpoints\BankSystem\Core\TRANSACTION_INVESTMENT_TYPE_RECURRING;
-use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_LIVE;
-use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_CANCELLED;
-use const Newpoints\BankSystem\Core\TRANSACTION_STATUS_NO_FUNDS;
-use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_DEPOSIT;
-use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_INVESTMENT;
-use const Newpoints\BankSystem\Core\TRANSACTION_TYPE_WITHDRAW;
-use const Newpoints\Core\DEBUG;
+use const NewPoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
+use const NewPoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_LOGGED;
+use const NewPoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_NEW;
+use const NewPoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_PROCESSED;
+use const NewPoints\BankSystem\Core\TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING;
+use const NewPoints\BankSystem\Core\TRANSACTION_INVESTMENT_TYPE_RECURRING;
+use const NewPoints\BankSystem\Core\TRANSACTION_STATUS_LIVE;
+use const NewPoints\BankSystem\Core\TRANSACTION_STATUS_CANCELLED;
+use const NewPoints\BankSystem\Core\TRANSACTION_STATUS_NO_FUNDS;
+use const NewPoints\BankSystem\Core\TRANSACTION_TYPE_DEPOSIT;
+use const NewPoints\BankSystem\Core\TRANSACTION_TYPE_INVESTMENT;
+use const NewPoints\BankSystem\Core\TRANSACTION_TYPE_WITHDRAW;
+use const NewPoints\Core\DEBUG;
 
 function newpoints_global_start(array &$hook_arguments): array
 {
@@ -862,7 +862,7 @@ function newpoints_terminate(): bool
                 );
 
                 if ($newpoints_pagination) {
-                    $newpoints_pagination = eval(\Newpoints\Core\templates_get('page_pagination'));
+                    $newpoints_pagination = eval(\NewPoints\Core\templates_get('page_pagination'));
                 }
             }
         }
@@ -889,12 +889,12 @@ function newpoints_terminate(): bool
     if (can_manage() && !$is_manage_page && !$mybb->get_input('view')) {
         $manage_url = url_handler_build(array_merge($url_params, ['manage' => 1]));
 
-        $newpoints_buttons .= eval(\Newpoints\Core\templates_get('button_manage'));
+        $newpoints_buttons .= eval(\NewPoints\Core\templates_get('button_manage'));
     }
 
     $page_title = $lang->newpoints_bank_system_page_title;
 
-    $page_contents = eval(\Newpoints\Core\templates_get('page'));
+    $page_contents = eval(\NewPoints\Core\templates_get('page'));
 
     output_page($page_contents);
 

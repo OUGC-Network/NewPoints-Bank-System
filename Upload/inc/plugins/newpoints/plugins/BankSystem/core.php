@@ -28,16 +28,16 @@
 
 declare(strict_types=1);
 
-namespace Newpoints\BankSystem\Core;
+namespace NewPoints\BankSystem\Core;
 
-use function Newpoints\Core\log_add;
-use function Newpoints\Core\points_add_simple;
-use function Newpoints\Core\points_subtract;
-use function Newpoints\Core\users_get_group_permissions;
+use function NewPoints\Core\log_add;
+use function NewPoints\Core\points_add_simple;
+use function NewPoints\Core\points_subtract;
+use function NewPoints\Core\users_get_group_permissions;
 
-use const Newpoints\BankSystem\ROOT;
-use const Newpoints\Core\LOGGING_TYPE_CHARGE;
-use const Newpoints\Core\LOGGING_TYPE_INCOME;
+use const NewPoints\BankSystem\ROOT;
+use const NewPoints\Core\LOGGING_TYPE_CHARGE;
+use const NewPoints\Core\LOGGING_TYPE_INCOME;
 
 const TRANSACTION_TYPE_DEPOSIT = 1;
 
@@ -69,7 +69,7 @@ const INTEREST_PERIOD_TYPE_WEEK = 2;
 
 function templates_get(string $template_name = '', bool $enable_html_comments = true): string
 {
-    return \Newpoints\Core\templates_get($template_name, $enable_html_comments, ROOT, 'bank_system_');
+    return \NewPoints\Core\templates_get($template_name, $enable_html_comments, ROOT, 'bank_system_');
 }
 
 function execute_task(): bool
