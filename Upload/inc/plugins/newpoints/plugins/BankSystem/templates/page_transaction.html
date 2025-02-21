@@ -21,16 +21,32 @@
                         <strong>{$lang->newpoints_bank_system_page_transaction_type}:</strong>
                         {$transaction_rate_deposit_text}
                         {$transaction_rate_withdraw_text}
+                        {$transaction_rate_transfer_text}
                     </td>
                     <td class="trow1">
-                        <select name="transaction_type">
+                        <select name="transaction_type" id="transaction_type_select">
                             <option value="{$transaction_type_deposit}" {$optionDisabledSelectedElementDeposit}>
                                 {$lang->newpoints_bank_system_page_transaction_type_deposit}
                             </option>
                             <option value="{$transaction_type_withdraw}" {$optionDisabledSelectedElementWithdraw}>
                                 {$lang->newpoints_bank_system_page_transaction_type_withdraw}
                             </option>
+                            <option value="{$transaction_type_transfer}" {$optionDisabledSelectedElementTransfer}>
+                                {$lang->newpoints_bank_system_page_transaction_type_transfer}
+                            </option>
                         </select>
+
+                        <script>
+                            $(function () {
+                                $('#transaction_type_select').change(function () {
+                                    if ($(this).val() === '{$transaction_type_transfer}') {
+                                        $('#transaction_type_transfer_row').show();
+                                    } else {
+                                        $('#transaction_type_transfer_row').hide();
+                                    }
+                                }).change();
+                            });
+                        </script>
                     </td>
                 </tr>
                 <tr>
@@ -42,8 +58,55 @@
                                step="0.01" min="1"/>
                     </td>
                 </tr>
+                <tr id="transaction_type_transfer_row" style="display: none;">
+                    <td class="trow2">
+                        <strong>{$lang->newpoints_bank_system_page_transaction_points}:</strong>
+                    </td>
+                    <td class="trow2">
+                        <input type="text" class="textbox" id="transfer_username" name="transfer_username" size="35"
+                               maxlength="{$mybb->settings['maxnamelength']}" value="{$transfer_username}"/>
+                        <link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1807">
+                        <script type="text/javascript"
+                                src="{$mybb->asset_url}/jscripts/select2/select2.min.js?ver=1806"></script>
+                        <script type="text/javascript">
+                            <!--
+                            if (use_xmlhttprequest == "1") {
+                                MyBB.select2();
+                                $("#transfer_username").select2({
+                                    placeholder: "{$lang->search_user}",
+                                    minimumInputLength: 2,
+                                    multiple: false,
+                                    allowClear: true,
+                                    ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+                                        url: "xmlhttp.php?action=get_users",
+                                        dataType: 'json',
+                                        data: function (term, page) {
+                                            return {
+                                                query: term, // search term
+                                            };
+                                        },
+                                        results: function (data, page) { // parse the results into the format expected by Select2.
+                                            // since we are using custom formatting functions we do not need to alter remote JSON data
+                                            return {results: data};
+                                        }
+                                    },
+                                    initSelection: function (element, callback) {
+                                        var value = $(element).val();
+                                        if (value !== "") {
+                                            callback({
+                                                id: value,
+                                                text: value
+                                            });
+                                        }
+                                    },
+                                });
+                            }
+                            // -->
+                        </script>
+                    </td>
+                </tr>
                 <tr>
-                    <td class="trow1" colspan="2">
+                    <td class="tfoot" colspan="2">
                         <input type="checkbox" class="checkbox" name="confirm" id="transaction_confirm" value="1"/>
                         <label for="transaction_confirm">{$lang->newpoints_bank_system_page_transaction_confirm}</label>
                     </td>

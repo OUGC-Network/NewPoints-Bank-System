@@ -106,6 +106,11 @@ const TABLES_DATA = [
             'unsigned' => true,
             'default' => 1
         ],
+        'transfer_user_id' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
         'complete_status' => [
             'type' => 'SMALLINT',
             'unsigned' => true,
@@ -161,6 +166,12 @@ const FIELDS_DATA = [
             'default' => 1,
             'formType' => 'checkBox'
         ],
+        'newpoints_bank_system_can_transfer' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 1,
+            'formType' => 'checkBox'
+        ],
         'newpoints_bank_system_minimum_deposit' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
@@ -173,6 +184,17 @@ const FIELDS_DATA = [
             ]
         ],
         'newpoints_bank_system_minimum_withdraw' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 1,
+            'formType' => 'numericField',
+            'formOptions' => [
+                'min' => 1,
+                'step' => 0.0001,
+            ]
+        ],
+        'newpoints_bank_system_minimum_transfer' => [
             'type' => 'DECIMAL',
             'unsigned' => true,
             'size' => DECIMAL_DATA_TYPE_SIZE,
@@ -202,6 +224,15 @@ const FIELDS_DATA = [
             ]
         ],
         'newpoints_rate_bank_system_interest' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'formType' => 'numericField',
+            'formOptions' => [
+                'max' => 100,
+            ]
+        ],
+        'newpoints_rate_bank_system_transfer' => [
             'type' => 'TINYINT',
             'unsigned' => true,
             'default' => 0,

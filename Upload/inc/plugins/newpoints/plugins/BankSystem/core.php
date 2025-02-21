@@ -47,6 +47,8 @@ const TRANSACTION_TYPE_WITHDRAW = 3;
 
 const TRANSACTION_TYPE_INTEREST = 4;
 
+const TRANSACTION_TYPE_TRANSFER = 5;
+
 const TRANSACTION_INVESTMENT_TYPE_NOT_RECURRING = 0;
 
 const TRANSACTION_INVESTMENT_TYPE_RECURRING = 1;
@@ -93,15 +95,20 @@ function execute_task(): bool
         'transaction_status' => "transaction_status='{$transaction_status_live}'",
     ];
 
-    $transaction_objects = transaction_get_multiple($where_clauses, [
-        'transaction_id',
-        'user_id',
-        'transaction_type',
-        'transaction_points',
-        'transaction_fee',
-        'investment_stamp',
-        'complete_status',
-    ], ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]);
+    $transaction_objects = transaction_get_multiple(
+        $where_clauses,
+        [
+            'transaction_id',
+            'user_id',
+            'transaction_type',
+            'transaction_points',
+            'transaction_fee',
+            'investment_stamp',
+            'transfer_user_id',
+            'complete_status',
+        ],
+        ['order_by' => 'transaction_stamp', 'asc' => 'desc', 'limit' => 10]
+    );
 
     foreach ($transaction_objects as $transaction_data) {
         $transaction_id = (int)$transaction_data['transaction_id'];
@@ -117,6 +124,8 @@ function execute_task(): bool
         $transaction_points = (float)$transaction_data['transaction_points'];
 
         $transaction_fee = (float)$transaction_data['transaction_fee'];
+
+        $transfer_user_id = (int)$transaction_data['transfer_user_id'];
 
         if ($complete_status === $complete_status_new) {
             if ($transaction_type === TRANSACTION_TYPE_DEPOSIT) {
@@ -148,6 +157,18 @@ function execute_task(): bool
                     points_add_simple($user_id, $transaction_points);
 
                     points_subtract($user_id, $transaction_fee);
+
+                    transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
+
+                    $complete_status = $complete_status_processed;
+                } else {
+                    transaction_update(['transaction_status' => $transaction_status_no_funds], $transaction_id);
+                }
+            } elseif ($transaction_type === TRANSACTION_TYPE_TRANSFER) {
+                if ($user_data['newpoints'] >= $transaction_points + $transaction_fee) {
+                    points_subtract($user_id, $transaction_points + $transaction_fee);
+
+                    points_add_simple($transfer_user_id, $transaction_points);
 
                     transaction_update(['complete_status' => $complete_status_processed], $transaction_id);
 
@@ -241,6 +262,46 @@ function execute_task(): bool
                         LOGGING_TYPE_CHARGE
                     );
                 }
+
+                transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
+            } elseif ($transaction_type === TRANSACTION_TYPE_TRANSFER) {
+                log_add(
+                    'bank_system_transfer_sender',
+                    '',
+                    $user_data['username'] ?? '',
+                    $user_id,
+                    $transaction_points,
+                    $transaction_id,
+                    $transfer_user_id,
+                    0,
+                    LOGGING_TYPE_CHARGE
+                );
+
+                if ($transaction_fee) {
+                    log_add(
+                        'bank_system_transfer_fee',
+                        '',
+                        $user_data['username'] ?? '',
+                        $user_id,
+                        $transaction_fee,
+                        $transaction_id,
+                        $user_id,
+                        0,
+                        LOGGING_TYPE_CHARGE
+                    );
+                }
+
+                log_add(
+                    'bank_system_transfer_recipient',
+                    '',
+                    get_user($transfer_user_id)['username'] ?? '',
+                    $transfer_user_id,
+                    $transaction_points,
+                    $transaction_id,
+                    $user_id,
+                    0,
+                    LOGGING_TYPE_INCOME
+                );
 
                 transaction_update(['complete_status' => TRANSACTION_COMPLETE_STATUS_LOGGED], $transaction_id);
             }
@@ -419,8 +480,6 @@ function user_update(int $user_id, array $update_data): int
 
 function user_rebuild_bank_details(int $user_id): bool
 {
-    global $db;
-
     $transaction_type_deposit = TRANSACTION_TYPE_DEPOSIT;
 
     $transaction_type_investment = TRANSACTION_TYPE_INVESTMENT;
@@ -534,6 +593,10 @@ function transaction_insert(array $transaction_data, bool $is_update = false, in
 
     if (isset($transaction_data['transaction_status'])) {
         $insert_data['transaction_status'] = (int)$transaction_data['transaction_status'];
+    }
+
+    if (isset($transaction_data['transfer_user_id'])) {
+        $insert_data['transfer_user_id'] = (int)$transaction_data['transfer_user_id'];
     }
 
     if (isset($transaction_data['complete_status'])) {
