@@ -292,12 +292,14 @@ function execute_task(): bool
 
         switch ($user_group_permissions['newpoints_bank_system_interest_period_type']) {
             case INTEREST_PERIOD_TYPE_DAY:
-                $interest_period_time = TIME_NOW - (int)(86400 * $interest_period);
+                $interest_period_time = 86400 * $interest_period;
                 break;
             default:
-                $interest_period_time = TIME_NOW - (int)(86400 * 7 * $interest_period);
+                $interest_period_time = 86400 * 7 * $interest_period;
                 break;
         }
+
+        $interest_period_time = TIME_NOW - $interest_period_time;
 
         $interest_points = $transaction_points * $interest_rate / 100;
 
