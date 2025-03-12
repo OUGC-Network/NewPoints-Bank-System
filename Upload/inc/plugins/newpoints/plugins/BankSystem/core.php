@@ -36,8 +36,232 @@ use function NewPoints\Core\points_subtract;
 use function NewPoints\Core\users_get_group_permissions;
 
 use const NewPoints\BankSystem\ROOT;
+use const Newpoints\Core\FORM_TYPE_NUMERIC_FIELD;
+use const Newpoints\Core\FORM_TYPE_SELECT_FIELD;
 use const NewPoints\Core\LOGGING_TYPE_CHARGE;
 use const NewPoints\Core\LOGGING_TYPE_INCOME;
+use const Newpoints\DECIMAL_DATA_TYPE_SIZE;
+use const Newpoints\DECIMAL_DATA_TYPE_STEP;
+
+const TABLES_DATA = [
+    'newpoints_bank_system_transactions' => [
+        'transaction_id' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'auto_increment' => true,
+            'primary_key' => true
+        ],
+        'user_id' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'transaction_type' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'transaction_points' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+        'transaction_fee' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 0
+        ],
+        'transaction_stamp' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'investment_type' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'investment_stamp' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'investment_execution_stamp' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'transaction_status' => [
+            'type' => 'SMALLINT',
+            'unsigned' => true,
+            'default' => 1
+        ],
+        'transfer_user_id' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 0
+        ],
+        'complete_status' => [
+            'type' => 'SMALLINT',
+            'unsigned' => true,
+            'default' => 0
+        ]
+        // todo: maybe approval system, but the withdraw points system already offers that
+    ]
+];
+
+const FIELDS_DATA = [
+    'users' => [
+        'newpoints_bank' => [
+            'type' => 'DECIMAL',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+        'newpoints_bank_investment' => [
+            'type' => 'DECIMAL',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+    ],
+    'usergroups' => [
+        'newpoints_bank_system_can_view' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 1,
+            'form_type' => 'checkBox'
+        ],
+        'newpoints_bank_system_can_deposit' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 1,
+            'form_type' => 'checkBox'
+        ],
+        'newpoints_bank_system_can_invest' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'form_type' => 'checkBox'
+        ],
+        'newpoints_bank_system_can_withdraw' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 1,
+            'form_type' => 'checkBox'
+        ],
+        'newpoints_bank_system_can_transfer' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 1,
+            'form_type' => 'checkBox'
+        ],
+        'newpoints_bank_system_minimum_deposit' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 1,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'min' => 1,
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+        'newpoints_bank_system_minimum_withdraw' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 1,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'min' => 1,
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+        'newpoints_bank_system_minimum_transfer' => [
+            'type' => 'DECIMAL',
+            'unsigned' => true,
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 1,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'min' => 1,
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+        'newpoints_rate_bank_system_deposit' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'max' => 100,
+            ]
+        ],
+        'newpoints_rate_bank_system_withdraw' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'max' => 100,
+            ]
+        ],
+        'newpoints_rate_bank_system_interest' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'max' => 100,
+            ]
+        ],
+        'newpoints_rate_bank_system_transfer' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                'max' => 100,
+            ]
+        ],
+        'newpoints_bank_system_interest_period' => [
+            'type' => 'INT',
+            'unsigned' => true,
+            'default' => 1,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+        ],
+        'newpoints_bank_system_interest_period_type' => [
+            'type' => 'TINYINT',
+            'unsigned' => true,
+            'default' => 0,
+            'form_type' => FORM_TYPE_SELECT_FIELD,
+            'formFunction' => '\NewPoints\BankSystem\Admin\options_list_interest_period_type'
+        ],
+        'newpoints_bank_system_interest_limit' => [
+            'type' => 'DECIMAL',
+            'size' => DECIMAL_DATA_TYPE_SIZE,
+            'default' => 0,
+            'form_type' => FORM_TYPE_NUMERIC_FIELD,
+            'form_options' => [
+                //'min' => 0,
+                'step' => DECIMAL_DATA_TYPE_STEP,
+            ]
+        ],
+    ]
+];
 
 const TRANSACTION_TYPE_DEPOSIT = 1;
 

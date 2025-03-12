@@ -49,6 +49,7 @@ use function NewPoints\Core\page_build_purchase_confirmation;
 use function NewPoints\Core\points_format;
 use function NewPoints\Core\url_handler_build;
 
+use const NewPoints\BankSystem\Core\TABLES_DATA;
 use const NewPoints\BankSystem\Core\INTEREST_PERIOD_TYPE_DAY;
 use const NewPoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_LOGGED;
 use const NewPoints\BankSystem\Core\TRANSACTION_COMPLETE_STATUS_NEW;
@@ -405,20 +406,20 @@ function newpoints_logs_end(): bool
 
 function newpoints_terminate(): bool
 {
-    global $mybb, $action_name;
+    global $mybb;
 
     if ($mybb->get_input('action') !== get_setting('bank_system_action_name')) {
         return false;
     }
-
-    $action_name = get_setting('bank_system_action_name');
 
     if (empty($mybb->usergroup['newpoints_bank_system_can_view'])) {
         error_no_permission();
     }
 
     global $db, $lang, $theme, $header, $templates, $headerinclude, $footer;
-    global $newpoints_file, $newpoints_menu, $newpoints_errors, $newpoints_pagination, $newpoints_additional, $newpoints_user_balance_formatted;
+    global $action_name, $newpoints_file, $newpoints_menu, $newpoints_errors, $newpoints_pagination, $newpoints_additional, $newpoints_user_balance_formatted;
+
+    $action_name = get_setting('bank_system_action_name');
 
     $url_params = ['action' => $action_name];
 
@@ -765,6 +766,7 @@ function newpoints_terminate(): bool
             ];
 
             $errors = [];
+
             if ($transaction_rate_deposit > 0) {
                 $insert_data['transaction_fee'] = $insert_data['transaction_points'] * ($transaction_rate_deposit / 100);
             }
@@ -815,6 +817,9 @@ function newpoints_terminate(): bool
 
         global $theme;
 
+
+        $price_step = TABLES_DATA['newpoints_bank_system_transactions']['transaction_points']['form_options']['step'];
+
         echo eval(templates_get('page_investment', false));
 
         exit;
@@ -838,6 +843,7 @@ function newpoints_terminate(): bool
 
             $current_page = 1;
         }
+
         $transaction_objects = transaction_get_multiple(["user_id='{$current_user_id}'"], [
             'transaction_id',
             'transaction_type',

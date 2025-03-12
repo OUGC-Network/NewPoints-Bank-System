@@ -30,7 +30,7 @@ declare(strict_types=1);
 
 use function NewPoints\BankSystem\Core\execute_task;
 
-function task_newpoints_bank_system(array $task_data): array
+function task_newpoints_bank_system(array &$task_data): array
 {
     global $lang;
 
