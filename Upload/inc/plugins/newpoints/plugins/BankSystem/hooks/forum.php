@@ -273,43 +273,43 @@ function newpoints_logs_log_row(): bool
     language_load('bank_system');
 
     if ($log_data['action'] === 'bank_system_deposit') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_deposit;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_deposit;
     }
 
     if ($log_data['action'] === 'bank_system_deposit_fee') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_deposit_fee;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_deposit_fee;
     }
 
     if ($log_data['action'] === 'bank_system_investment') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_investment;
     }
 
     if ($log_data['action'] === 'bank_system_investment_fee') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment_fee;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_investment_fee;
     }
 
     if ($log_data['action'] === 'bank_system_withdraw') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_withdraw;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_withdraw;
     }
 
     if ($log_data['action'] === 'bank_system_withdraw_fee') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_withdraw_fee;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_withdraw_fee;
     }
 
     if ($log_data['action'] === 'bank_system_interest_profit') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_interest_profit;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_interest_profit;
     }
 
     if ($log_data['action'] === 'bank_system_investment_cancel') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_investment_cancel;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_investment_cancel;
     }
 
     if ($log_data['action'] === 'bank_system_transfer_sender') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_transfer_sender;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_transfer_sender;
     }
 
     if ($log_data['action'] === 'bank_system_transfer_recipient') {
-        $log_action = $lang->newpoints_signature_market_page_logs_bank_system_transfer_recipient;
+        $log_action = $lang->newpoints_bank_system_page_logs_bank_system_transfer_recipient;
     }
 
     $transaction_id = (int)$log_data['log_primary_id'];
@@ -323,7 +323,7 @@ function newpoints_logs_log_row(): bool
     $transaction_id = (int)$transaction_data['transaction_type'];
 
     $log_primary = $lang->sprintf(
-        $lang->newpoints_signature_market_page_logs_bank_system_log_type_transaction_id,
+        $lang->newpoints_bank_system_page_logs_bank_system_log_type_transaction_id,
         $transaction_id
     );
 
@@ -332,7 +332,7 @@ function newpoints_logs_log_row(): bool
 
         if ($user_data) {
             $log_secondary = $lang->sprintf(
-                $lang->newpoints_signature_market_page_logs_bank_system_log_type_transfer_recipient,
+                $lang->newpoints_bank_system_page_logs_bank_system_log_type_transfer_recipient,
                 htmlspecialchars_uni($user_data['username']) ?? ''
             );
         }
@@ -343,7 +343,7 @@ function newpoints_logs_log_row(): bool
 
         if ($user_data) {
             $log_secondary = $lang->sprintf(
-                $lang->newpoints_signature_market_page_logs_bank_system_log_type_transfer_sender,
+                $lang->newpoints_bank_system_page_logs_bank_system_log_type_transfer_sender,
                 htmlspecialchars_uni($user_data['username']) ?? ''
             );
         }
@@ -361,43 +361,43 @@ function newpoints_logs_end(): bool
 
     foreach ($action_types as $key => &$action_type) {
         if ($key === 'bank_system_deposit') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_deposit;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_deposit;
         }
 
         if ($key === 'bank_system_deposit_fee') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_deposit_fee;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_deposit_fee;
         }
 
         if ($key === 'bank_system_investment') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_investment;
         }
 
         if ($key === 'bank_system_investment_fee') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment_fee;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_investment_fee;
         }
 
         if ($key === 'bank_system_withdraw') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_withdraw;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_withdraw;
         }
 
         if ($key === 'bank_system_withdraw_fee') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_withdraw_fee;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_withdraw_fee;
         }
 
         if ($key === 'bank_system_interest_profit') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_interest_profit;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_interest_profit;
         }
 
         if ($key === 'bank_system_investment_cancel') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_investment_cancel;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_investment_cancel;
         }
 
         if ($key === 'bank_system_transfer_sender') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_transfer_sender;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_transfer_sender;
         }
 
         if ($key === 'bank_system_transfer_recipient') {
-            $action_type = $lang->newpoints_signature_market_page_logs_bank_system_transfer_recipient;
+            $action_type = $lang->newpoints_bank_system_page_logs_bank_system_transfer_recipient;
         }
     }
 
@@ -537,7 +537,7 @@ function newpoints_terminate(): bool
             $transaction_points = $minimum_transaction_points;
         }
 
-        $optionDisabledSelectedElementDeposit = $optionDisabledSelectedElementWithdraw = '';
+        $optionDisabledSelectedElementDeposit = $optionDisabledSelectedElementWithdraw = $optionDisabledSelectedElementTransfer = '';
 
         if (empty($mybb->usergroup['newpoints_bank_system_can_deposit'])) {
             $optionDisabledSelectedElementDeposit = 'disabled="disabled"';
