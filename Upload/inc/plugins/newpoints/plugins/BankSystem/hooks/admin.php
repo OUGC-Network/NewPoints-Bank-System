@@ -32,7 +32,7 @@ namespace NewPoints\BankSystem\Hooks\Admin;
 
 use function NewPoints\Core\language_load;
 
-use const NewPoints\BankSystem\Admin\FIELDS_DATA;
+use const NewPoints\BankSystem\Core\FIELDS_DATA;
 use const NewPoints\BankSystem\ROOT;
 
 function newpoints_settings_rebuild_start(array &$hook_arguments): array
