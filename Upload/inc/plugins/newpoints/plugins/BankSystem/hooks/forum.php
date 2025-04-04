@@ -320,7 +320,7 @@ function newpoints_logs_log_row(): bool
         return false;
     }
 
-    $transaction_id = (int)$transaction_data['transaction_type'];
+    //$transaction_id = (int)$transaction_data['transaction_type'];
 
     $log_primary = $lang->sprintf(
         $lang->newpoints_bank_system_page_logs_bank_system_log_type_transaction_id,

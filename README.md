@@ -1,10 +1,16 @@
+<p align="center">
+    <a href="" rel="noopener">
+        <img width="700" height="400" src="https://github.com/user-attachments/assets/34b122ac-2e53-4c43-a2ac-cc90dbb20cd4" alt="Project logo">
+    </a>
+</p>
+
 <h3 align="center">Newpoints Bank System</h3>
 
 <div align="center">
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/OUGC-Network/NewPoints-Bank.svg)](./issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/OUGC-Network/NewPoints-Bank.svg)](./pulls)
+[![GitHub Issues](https://img.shields.io/github/issues/OUGC-Network/NewPoints-Bank-System.svg)](./issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/OUGC-Network/NewPoints-Bank-System.svg)](./pulls)
 [![License](https://img.shields.io/badge/license-GPL-blue)](/LICENSE)
 
 </div>
